@@ -82,21 +82,32 @@ class LockOverlayActivity : FragmentActivity() {
                 LockScreen(
                     useBiometric = useBiometric && canUseBiometric(),
                     onBiometric = { startBiometric { completeUnlock() } },
+                    ///// begin of edit
                     onUnlock = { pass ->
-                    // keep digits-only in case the field lets other chars in
-                    val chars = pass.filter { it.isDigit() }.toCharArray()
+                        // keep digits-only in case the field lets other chars in
+                        val digitsOnly = pass.filter { it.isDigit() }
 
-                    val ok = repo.verifyPassword(chars)
+                        if (digitsOnly.isEmpty()) {
+                            Toast.makeText(
+                                this,
+                                "Enter your passcode", /// when field is empty, show this message
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            val chars = digitsOnly.toCharArray()
 
-                    // wipe temp copy
-                    java.util.Arrays.fill(chars, '\u0000')
+                            val ok = repo.verifyPassword(chars)
 
-                    if (ok) {
-                        completeUnlock()
-                    } else {
-                        Toast.makeText(this, "Wrong passcode", Toast.LENGTH_SHORT).show()
+                            // wipe temp copy
+                            java.util.Arrays.fill(chars, '\u0000')
+
+                            if (ok) {
+                                completeUnlock()
+                            } else {
+                                Toast.makeText(this, "Wrong passcode", Toast.LENGTH_SHORT).show()
+                            }
+                        } //// end edit
                     }
-                }
 
                 )
             }
