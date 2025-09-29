@@ -5,15 +5,17 @@ import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,7 +33,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import com.example.adamapplock.ui.theme.AdamAppLockTheme
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.input.ImeAction
 
 
@@ -40,11 +42,16 @@ const val EXTRA_LOCKED_PKG = "locked_pkg"
 class LockOverlayActivity : FragmentActivity() {
 
     private var lockedPkg: String? = null
+    private var backCallback: OnBackPressedCallback? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         lockedPkg = intent.getStringExtra(EXTRA_LOCKED_PKG)
+
+        backCallback = onBackPressedDispatcher.addCallback(this, true) {
+            // Intentionally consume back gestures to keep the overlay visible.
+        }
 
         // Show over lockscreen and turn screen on
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -83,20 +90,30 @@ class LockOverlayActivity : FragmentActivity() {
                     useBiometric = useBiometric && canUseBiometric(),
                     onBiometric = { startBiometric { completeUnlock() } },
                     onUnlock = { pass ->
-                    // keep digits-only in case the field lets other chars in
-                    val chars = pass.filter { it.isDigit() }.toCharArray()
+                        // keep digits-only in case the field lets other chars in
+                        val digitsOnly = pass.filter { it.isDigit() }
 
-                    val ok = repo.verifyPassword(chars)
+                        if (digitsOnly.length < 4) {
+                            Toast.makeText(
+                                this,
+                                "Enter your passcode",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            val chars = digitsOnly.toCharArray()
 
-                    // wipe temp copy
-                    java.util.Arrays.fill(chars, '\u0000')
+                            val ok = repo.verifyPassword(chars)
 
-                    if (ok) {
-                        completeUnlock()
-                    } else {
-                        Toast.makeText(this, "Wrong passcode", Toast.LENGTH_SHORT).show()
+                            // wipe temp copy
+                            java.util.Arrays.fill(chars, '\u0000')
+
+                            if (ok) {
+                                completeUnlock()
+                            } else {
+                                Toast.makeText(this, "Wrong passcode", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
-                }
 
                 )
             }
@@ -152,6 +169,10 @@ class LockOverlayActivity : FragmentActivity() {
         Prefs.setSessionUnlocked(this, pkg, uid)
         Prefs.setLastUnlockNow(this)
 
+        // Allow back navigation so the overlay can close normally after a successful unlock.
+        backCallback?.remove()
+        backCallback = null
+
         // Relaunch the target app so the user returns there
         packageManager.getLaunchIntentForPackage(pkg)?.let { launch ->
             launch.addFlags(
@@ -164,6 +185,12 @@ class LockOverlayActivity : FragmentActivity() {
 
         // Close the overlay task
         finishAndRemoveTask()
+    }
+
+    override fun onDestroy() {
+        backCallback?.remove()
+        backCallback = null
+        super.onDestroy()
     }
 }
 
@@ -191,8 +218,6 @@ private fun LockScreen(
     val shouldAutoFocus = !(useBiometric && biometricAvailable)
     val cs = MaterialTheme.colorScheme
 
-
-
     LaunchedEffect(shouldAutoFocus) {
         if (shouldAutoFocus) {
             focusRequester.requestFocus()
@@ -214,16 +239,15 @@ private fun LockScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("App Locked", color = cs.background, style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(16.dp))
-
         Text(
-            "App Locked",
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.titleLarge
+            text = "App Locked",
+            color = cs.onBackground,
+            style = MaterialTheme.typography.headlineMedium
         )
 
-        OutlinedTextField( // or TextField — either is fine
+        Spacer(Modifier.height(24.dp))
+
+        OutlinedTextField(
             value = passcode,
             onValueChange = { passcode = it.filter { ch -> ch.isDigit() }.take(8) },
             modifier = Modifier
@@ -232,18 +256,26 @@ private fun LockScreen(
             label = { Text("Passcode") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,imeAction = ImeAction.Done), // NumberPassword if available in your version
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    focusManager.clearFocus(force = true)
+                    keyboardController?.hide()
+                    onUnlock(passcode)
+                }
+            ),
+            singleLine = true,
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = cs.primary,
+                unfocusedBorderColor = cs.outline,
+                cursorColor = cs.primary,
+                containerColor = cs.surface,
+                focusedTextColor = cs.onSurface,
+                unfocusedTextColor = cs.onSurfaceVariant
             )
-            // ← No colors override. Let Material3 pick from MaterialTheme.colorScheme (dynamic)
         )
-
 
         Spacer(Modifier.height(20.dp))
 
