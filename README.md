@@ -29,13 +29,7 @@ A Jetpack Compose sample that turns an Android device into an app locker. The ap
 Project targets SDK 35 and uses Kotlin 2.0.21 with the 2024.09 Compose BOM.
 
 ## Getting Started
-1. Clone or download the repository.
-2. Open the project root in Android Studio and let it sync Gradle.
-3. Build and run on a device/emulator with:
-
-        ./gradlew installDebug
-
-4. Grant the app notification permission (Android 13+) when prompted so service status warnings can be shown.
+Download the latest `AdamAppLock` APK from the [Releases](../../releases) page on GitHub and install it on your Android device (enable "Install unknown apps" if prompted).
 
 ## Using the App
 1. Launch the app and follow the passcode setup flow.
