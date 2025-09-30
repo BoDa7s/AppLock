@@ -38,7 +38,6 @@ Download the latest `AdamAppLock` APK from the [Releases](../../releases) page o
 4. Optionally open the settings panel to:
    - Change the master passcode.
    - Enable biometric unlock.
-   - Choose an auto-lock interval (immediate, 1–10 minutes, or on screen lock).
 
 Once configured, switching to a locked app triggers the overlay requiring passcode or biometrics. Screen off/on events or idle timeouts trigger re-authentication based on your chosen auto-lock policy.
 
