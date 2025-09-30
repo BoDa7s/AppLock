@@ -1,14 +1,6 @@
 ## [Releases History](../../releases)
 
 Explore previous versions, changelogs, and downloadable artifacts on the project's Releases page.
-
-### Downloadable APKs
-
-| Version | APK |
-|---------|-----|
-| v2.2 | [AdamAppLock_v2.2.apk](APK/AdamAppLock_v2.2.apk) |
-| v1.1 | [AdamAppLock_v1.1.apk](APK/AdamAppLock_v1.1.apk) |
-
 # AppLock-Android
 
 A Jetpack Compose sample that turns an Android device into an app locker. The app teaches how to watch foreground apps with an <code>AccessibilityService</code>, block access with a fullscreen overlay, and gate everything behind a master passcode with optional biometric fallback.
