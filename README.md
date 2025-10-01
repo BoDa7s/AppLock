@@ -5,7 +5,7 @@ Explore previous versions, changelogs, and downloadable artifacts on the project
 AppLock-Android is A Jetpack Compose that turns an Android device into an app locker. The app watches foreground apps with an <code>AccessibilityService</code>, block access with a fullscreen overlay, and gate everything behind a master passcode with optional biometric fallback.
 
 ## Project Stage
-- Internal dogfooding builds only; no Play Store or GitHub release artifacts are published yet.
+- Internal builds only; no Play Store or GitHub release artifacts are published yet.
 - Targets Android 12 (API 31) and above. The project compiles with SDK 36, targets SDK 34, and uses Kotlin 2.0.21 with the Compose 2024.10.00 BOM.
 - Current focus: finalize fundemintal features, resolve remaining bugs, stabilize accessibility/onboarding UX, and gatherr testing feedback to prepare the app for its first official release.
 
