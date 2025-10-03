@@ -336,13 +336,32 @@ fun SettingsScreen(
             },
             headlineContent = { Text("Use fingerprint", color = cs.onBackground) },
             trailingContent = {
-                Switch(
+
+                /*Switch(
                     checked = useBiometric,
                     onCheckedChange = {
                         useBiometric = it
                         Prefs.setUseBiometric(ctx, it)
                     }
+                )*/
+
+                //// new switch with colors styles
+                Switch(
+                    checked = useBiometric,
+                    onCheckedChange = {
+                        useBiometric = it
+                        Prefs.setUseBiometric(ctx, it)
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedBorderColor = Color.Transparent,
+                        checkedThumbColor = cs.onPrimary,
+                        checkedTrackColor = cs.primary,
+                        uncheckedThumbColor = cs.onSurfaceVariant,
+                        uncheckedTrackColor = cs.surfaceVariant,
+                        uncheckedBorderColor = Color.Transparent
+                    )
                 )
+
             },
             modifier = Modifier.fillMaxWidth()
         )
@@ -430,7 +449,7 @@ private fun AppSelectionScreen(
     var locked by remember { mutableStateOf(Prefs.getLockedApps(ctx).toSet()) }
     var selectedSegment by rememberSaveable { mutableStateOf(AppSelectionSegment.Unlocked) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    val segments = remember { AppSelectionSegment.values() }
+    val segments = remember { AppSelectionSegment.entries.toTypedArray() }
 
     val lockedApps = remember(uiState.apps, locked) {
         uiState.apps.filter { locked.contains(it.pkg) }
@@ -463,6 +482,21 @@ private fun AppSelectionScreen(
         }
     }
 
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        SingleChoiceSegmentedButtonRow {
+            segments.forEachIndexed { index, segment ->
+                SegmentedButton(
+                    selected = selectedSegment == segment,
+                    onClick = { selectedSegment = segment },
+                    shape = SegmentedButtonDefaults.itemShape(index, segments.size)
+                ) { Text(segment.label) }
+            }
+        }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -480,7 +514,7 @@ private fun AppSelectionScreen(
                     .padding(bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                SingleChoiceSegmentedButtonRow {
+                /*SingleChoiceSegmentedButtonRow {
                     segments.forEachIndexed { index, segment ->
                         SegmentedButton(
                             selected = selectedSegment == segment,
@@ -490,7 +524,7 @@ private fun AppSelectionScreen(
                             Text(segment.label)
                         }
                     }
-                }
+                }*/
 
                 OutlinedTextField(
                     value = searchQuery,
