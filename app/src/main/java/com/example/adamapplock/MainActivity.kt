@@ -399,7 +399,7 @@ private data class AppEntry(
     val icon: ImageBitmap?
 )
 
-private data class AppListUiState(
+data class AppListUiState(
     val isLoading: Boolean = true,
     val apps: List<AppEntry> = emptyList()
 )
