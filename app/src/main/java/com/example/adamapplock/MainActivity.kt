@@ -1,11 +1,12 @@
 package com.example.adamapplock
 
 import android.annotation.SuppressLint
-import com.example.adamapplock.ui.theme.ThemeMode
+import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,6 +15,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import com.example.adamapplock.ui.theme.AdamAppLockTheme
+import com.example.adamapplock.ui.theme.ThemeMode
 import android.content.Context
 import android.os.Build
 import androidx.compose.runtime.Composable
@@ -42,9 +45,24 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.outlined.Fingerprint
-
-import kotlinx.coroutines.withContext
+import androidx.compose.material.icons.outlined.Android
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.layout.ContentScale
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.Drawable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import kotlin.math.roundToInt
 
 
 
@@ -84,6 +102,7 @@ class MainActivity : FragmentActivity() {
                         var selectedTab by remember { mutableIntStateOf(0) } // 0 = Main, 1 = Settings
                         val tabs = listOf("Main", "Settings")
                         val cs = MaterialTheme.colorScheme
+                        val appListViewModel: AppListViewModel = viewModel()
 
                         Column(
                             Modifier.fillMaxSize()
@@ -102,7 +121,7 @@ class MainActivity : FragmentActivity() {
                             }
 
                             when (selectedTab) {
-                                0 -> AppSelectionScreen()
+                                0 -> AppSelectionScreen(appListViewModel)
                                 1 -> SettingsScreen(
                                     onBack = { selectedTab = 0 },
                                     themeMode = themeMode,
@@ -374,29 +393,26 @@ fun SettingsScreen(
 }
 
 
-@SuppressLint("MutableCollectionMutableState", "QueryPermissionsNeeded")
+private data class AppEntry(
+    val pkg: String,
+    val label: String,
+    val icon: ImageBitmap?
+)
+
+private data class AppListUiState(
+    val isLoading: Boolean = true,
+    val apps: List<AppEntry> = emptyList()
+)
+
 @Composable
-private fun AppSelectionScreen() {
+private fun AppSelectionScreen(
+    appListViewModel: AppListViewModel
+) {
     val ctx = LocalContext.current
-    val pm = ctx.packageManager
     val cs = MaterialTheme.colorScheme
+    val uiState by appListViewModel.uiState.collectAsState()
 
-
-    // Load launchable apps off the main thread
-    data class AppEntry(val pkg: String, val label: String)
-
-    val apps by produceState(initialValue = emptyList(), pm) {
-        value = withContext(kotlinx.coroutines.Dispatchers.IO) {
-            pm.getInstalledApplications(PackageManager.GET_META_DATA)
-                .asSequence()
-                .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
-                .map { ai -> AppEntry(ai.packageName, pm.getApplicationLabel(ai).toString()) }
-                .sortedBy { it.label.lowercase() }
-                .toList()
-        }
-    }
-
-    var locked by remember { mutableStateOf(Prefs.getLockedApps(ctx)) }
+    var locked by remember { mutableStateOf(Prefs.getLockedApps(ctx).toSet()) }
 
 
     LazyColumn(
@@ -421,7 +437,7 @@ private fun AppSelectionScreen() {
 
         // App rows
         items(
-            items = apps,
+            items = uiState.apps,
             key = { it.pkg } // stable key for better performance
         ) { app ->
             val checked = locked.contains(app.pkg)
@@ -432,6 +448,26 @@ private fun AppSelectionScreen() {
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (app.icon != null) {
+                    Image(
+                        bitmap = app.icon,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(MaterialTheme.shapes.small),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.Android,
+                        contentDescription = null,
+                        tint = cs.onSurfaceVariant,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+
+                Spacer(Modifier.width(12.dp))
+
                 Text(
                     text = app.label,
                     color = cs.onBackground,
@@ -441,7 +477,7 @@ private fun AppSelectionScreen() {
                     checked = checked,
                     onCheckedChange = {
                         Prefs.toggleLocked(ctx, app.pkg)
-                        locked = Prefs.getLockedApps(ctx) // re-read to update UI
+                        locked = Prefs.getLockedApps(ctx).toSet() // re-read to update UI
                     }
                 )
             }
@@ -449,9 +485,100 @@ private fun AppSelectionScreen() {
             HorizontalDivider(thickness = DividerDefaults.Thickness, color = cs.outlineVariant)
         }
 
-        // (optional) bottom spacer so last row isn't tight to nav bar
-        item { Spacer(Modifier.height(24.dp)) }
+        if (!uiState.isLoading && uiState.apps.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No launchable apps found",
+                        color = cs.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        if (uiState.isLoading) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        } else {
+            // (optional) bottom spacer so last row isn't tight to nav bar
+            item { Spacer(Modifier.height(24.dp)) }
+        }
     }
+}
+
+class AppListViewModel(application: Application) : AndroidViewModel(application) {
+    private val _uiState = MutableStateFlow(AppListUiState())
+    val uiState: StateFlow<AppListUiState> = _uiState.asStateFlow()
+
+    init {
+        loadApps()
+    }
+
+    @SuppressLint("QueryPermissionsNeeded")
+    private fun loadApps() {
+        val application = getApplication<Application>()
+        val pm = application.packageManager
+        val defaultIconSize = (40.dp.value * application.resources.displayMetrics.density)
+            .roundToInt()
+            .coerceAtLeast(1)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            val installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+                .asSequence()
+                .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+                .map { ai ->
+                    val label = pm.getApplicationLabel(ai).toString()
+                    val iconBitmap = runCatching { pm.getApplicationIcon(ai.packageName) }
+                        .getOrNull()
+                        ?.toImageBitmap(defaultIconSize)
+
+                    AppEntry(
+                        pkg = ai.packageName,
+                        label = label,
+                        icon = iconBitmap
+                    )
+                }
+                .sortedBy { it.label.lowercase() }
+                .toList()
+
+            _uiState.value = AppListUiState(
+                isLoading = false,
+                apps = installedApps
+            )
+        }
+    }
+}
+
+private fun Drawable.toImageBitmap(defaultSizePx: Int): ImageBitmap {
+    val width = when {
+        intrinsicWidth > 0 -> intrinsicWidth
+        else -> defaultSizePx
+    }
+    val height = when {
+        intrinsicHeight > 0 -> intrinsicHeight
+        else -> defaultSizePx
+    }
+
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    setBounds(0, 0, canvas.width, canvas.height)
+    draw(canvas)
+    return bitmap.asImageBitmap()
 }
 
 
