@@ -21,7 +21,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.fragment.app.FragmentActivity
 import com.example.adamapplock.ui.theme.AdamAppLockTheme
 import com.example.adamapplock.ui.theme.ThemeMode
 import android.content.Context
@@ -51,7 +50,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import kotlinx.coroutines.Dispatchers
@@ -63,10 +61,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlin.math.roundToInt
+import androidx.activity.ComponentActivity
+import androidx.core.graphics.createBitmap
 
 
-
-class MainActivity : FragmentActivity() {
+class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -393,7 +392,7 @@ fun SettingsScreen(
 }
 
 
-private data class AppEntry(
+data class AppEntry(
     val pkg: String,
     val label: String,
     val icon: ImageBitmap?
@@ -426,6 +425,8 @@ private fun AppSelectionScreen(
         verticalArrangement = Arrangement.spacedBy(0.dp) // we’ll use dividers
     ) {
         // Header
+
+        /*  No longer needed  "Select Apps to Lock"
         item {
             Text(
                 "Select Apps to Lock",
@@ -434,6 +435,7 @@ private fun AppSelectionScreen(
             )
             Spacer(Modifier.height(8.dp))
         }
+        */
 
         // App rows
         items(
@@ -574,7 +576,7 @@ private fun Drawable.toImageBitmap(defaultSizePx: Int): ImageBitmap {
         else -> defaultSizePx
     }
 
-    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(width, height)
     val canvas = Canvas(bitmap)
     setBounds(0, 0, canvas.width, canvas.height)
     draw(canvas)
