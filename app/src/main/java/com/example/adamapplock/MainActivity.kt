@@ -21,7 +21,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.fragment.app.FragmentActivity
 import com.example.adamapplock.ui.theme.AdamAppLockTheme
 import com.example.adamapplock.ui.theme.ThemeMode
 import android.content.Context
@@ -46,12 +45,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import kotlinx.coroutines.Dispatchers
@@ -63,10 +64,18 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlin.math.roundToInt
+import androidx.activity.ComponentActivity
+import androidx.core.graphics.createBitmap
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextFieldDefaults
 
 
-
-class MainActivity : FragmentActivity() {
+class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -327,13 +336,32 @@ fun SettingsScreen(
             },
             headlineContent = { Text("Use fingerprint", color = cs.onBackground) },
             trailingContent = {
-                Switch(
+
+                /*Switch(
                     checked = useBiometric,
                     onCheckedChange = {
                         useBiometric = it
                         Prefs.setUseBiometric(ctx, it)
                     }
+                )*/
+
+                //// new switch with colors styles
+                Switch(
+                    checked = useBiometric,
+                    onCheckedChange = {
+                        useBiometric = it
+                        Prefs.setUseBiometric(ctx, it)
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedBorderColor = Color.Transparent,
+                        checkedThumbColor = cs.onPrimary,
+                        checkedTrackColor = cs.primary,
+                        uncheckedThumbColor = cs.onSurfaceVariant,
+                        uncheckedTrackColor = cs.surfaceVariant,
+                        uncheckedBorderColor = Color.Transparent
+                    )
                 )
+
             },
             modifier = Modifier.fillMaxWidth()
         )
@@ -393,7 +421,7 @@ fun SettingsScreen(
 }
 
 
-private data class AppEntry(
+data class AppEntry(
     val pkg: String,
     val label: String,
     val icon: ImageBitmap?
@@ -404,6 +432,12 @@ data class AppListUiState(
     val apps: List<AppEntry> = emptyList()
 )
 
+private enum class AppSelectionSegment(val label: String) {
+    Unlocked("Unlocked"),
+    Locked("Locked")
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppSelectionScreen(
     appListViewModel: AppListViewModel
@@ -413,7 +447,55 @@ private fun AppSelectionScreen(
     val uiState by appListViewModel.uiState.collectAsState()
 
     var locked by remember { mutableStateOf(Prefs.getLockedApps(ctx).toSet()) }
+    var selectedSegment by rememberSaveable { mutableStateOf(AppSelectionSegment.Unlocked) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val segments = remember { AppSelectionSegment.entries.toTypedArray() }
 
+    val lockedApps = remember(uiState.apps, locked) {
+        uiState.apps.filter { locked.contains(it.pkg) }
+    }
+    val unlockedApps = remember(uiState.apps, locked) {
+        uiState.apps.filter { !locked.contains(it.pkg) }
+    }
+
+    val visibleApps = remember(selectedSegment, searchQuery, lockedApps, unlockedApps) {
+        val base = when (selectedSegment) {
+            AppSelectionSegment.Unlocked -> unlockedApps
+            AppSelectionSegment.Locked -> lockedApps
+        }
+        if (searchQuery.isBlank()) base
+        else base.filter { it.label.contains(searchQuery, ignoreCase = true) }
+    }
+
+    val hasAnyApps = uiState.apps.isNotEmpty()
+    val emptyStateMessage = remember(selectedSegment, searchQuery, hasAnyApps) {
+        if (!hasAnyApps) {
+            "No launchable apps found"
+        } else if (searchQuery.isBlank()) {
+            if (selectedSegment == AppSelectionSegment.Locked) {
+                "No locked apps yet"
+            } else {
+                "All of your apps are currently locked"
+            }
+        } else {
+            "No apps match your search"
+        }
+    }
+
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        SingleChoiceSegmentedButtonRow {
+            segments.forEachIndexed { index, segment ->
+                SegmentedButton(
+                    selected = selectedSegment == segment,
+                    onClick = { selectedSegment = segment },
+                    shape = SegmentedButtonDefaults.itemShape(index, segments.size)
+                ) { Text(segment.label) }
+            }
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -423,98 +505,135 @@ private fun AppSelectionScreen(
             .navigationBarsPadding()
             .padding(horizontal = 16.dp),
         contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp) // we’ll use dividers
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        // Header
         item {
-            Text(
-                "Select Apps to Lock",
-                style = MaterialTheme.typography.titleLarge,
-                color = cs.primary
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-
-        // App rows
-        items(
-            items = uiState.apps,
-            key = { it.pkg } // stable key for better performance
-        ) { app ->
-            val checked = locked.contains(app.pkg)
-
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (app.icon != null) {
-                    Image(
-                        bitmap = app.icon,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(MaterialTheme.shapes.small),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Outlined.Android,
-                        contentDescription = null,
-                        tint = cs.onSurfaceVariant,
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-
-                Spacer(Modifier.width(12.dp))
-
-                Text(
-                    text = app.label,
-                    color = cs.onBackground,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = checked,
-                    onCheckedChange = {
-                        Prefs.toggleLocked(ctx, app.pkg)
-                        locked = Prefs.getLockedApps(ctx).toSet() // re-read to update UI
+                /*SingleChoiceSegmentedButtonRow {
+                    segments.forEachIndexed { index, segment ->
+                        SegmentedButton(
+                            selected = selectedSegment == segment,
+                            onClick = { selectedSegment = segment },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = segments.size)
+                        ) {
+                            Text(segment.label)
+                        }
                     }
+                }*/
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search apps") },
+                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    shape = MaterialTheme.shapes.large,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = cs.surface,
+                        unfocusedContainerColor = cs.surface,
+                        disabledContainerColor = cs.surface,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
                 )
             }
-
             HorizontalDivider(thickness = DividerDefaults.Thickness, color = cs.outlineVariant)
         }
 
-        if (!uiState.isLoading && uiState.apps.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No launchable apps found",
-                        color = cs.onSurfaceVariant
-                    )
+        when {
+            uiState.isLoading -> {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
-        }
 
-        if (uiState.isLoading) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+            visibleApps.isEmpty() -> {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = emptyStateMessage, color = cs.onSurfaceVariant)
+                    }
                 }
             }
-        } else {
-            // (optional) bottom spacer so last row isn't tight to nav bar
-            item { Spacer(Modifier.height(24.dp)) }
+
+            else -> {
+                items(
+                    items = visibleApps,
+                    key = { it.pkg }
+                ) { app ->
+                    val checked = locked.contains(app.pkg)
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (app.icon != null) {
+                            Image(
+                                bitmap = app.icon,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(MaterialTheme.shapes.small),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.Android,
+                                contentDescription = null,
+                                tint = cs.onSurfaceVariant,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+
+                        Spacer(Modifier.width(12.dp))
+
+                        Text(
+                            text = app.label,
+                            color = cs.onBackground,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Switch(
+                            checked = checked,
+                            onCheckedChange = {
+                                Prefs.toggleLocked(ctx, app.pkg)
+                                locked = Prefs.getLockedApps(ctx).toSet()
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedBorderColor = Color.Transparent,
+                                checkedThumbColor = cs.onPrimary,
+                                checkedTrackColor = cs.primary,
+                                uncheckedThumbColor = cs.onSurfaceVariant,
+                                uncheckedTrackColor = cs.surfaceVariant,
+                                uncheckedBorderColor = Color.Transparent
+                            )
+                        )
+                    }
+
+                    HorizontalDivider(thickness = DividerDefaults.Thickness, color = cs.outlineVariant)
+                }
+
+                item { Spacer(Modifier.height(24.dp)) }
+            }
         }
     }
 }
@@ -574,7 +693,7 @@ private fun Drawable.toImageBitmap(defaultSizePx: Int): ImageBitmap {
         else -> defaultSizePx
     }
 
-    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(width, height)
     val canvas = Canvas(bitmap)
     setBounds(0, 0, canvas.width, canvas.height)
     draw(canvas)
