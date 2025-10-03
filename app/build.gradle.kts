@@ -84,6 +84,7 @@ dependencies {
     implementation(libs.androidx.core.ktx.v1131)
     implementation(libs.androidx.appcompat.v161)
     implementation(libs.androidx.lifecycle.runtime.ktx.v284)
+    implementation(libs.androidx.lifecycle.viewmodel.compose.v284)
 
     // Biometric
     implementation(libs.androidx.biometric.v110)
