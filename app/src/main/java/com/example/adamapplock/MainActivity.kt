@@ -463,6 +463,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+
         item { HorizontalDivider(color = cs.outlineVariant) }
 
         // --- Theme
