@@ -17,9 +17,10 @@ class AppLockAccessibilityService : AccessibilityService() {
     private val screenOffReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {
-                // Screen off either clears immediate sessions or records when the app went background
+                // Screen off clears the session when configured to lock immediately, otherwise records the background time
                 val timer = Prefs.getLockTimerMillis(this@AppLockAccessibilityService)
-                if (timer == Prefs.LOCK_TIMER_IMMEDIATE) {
+                val lockOnScreenOff = Prefs.lockOnScreenOff(this@AppLockAccessibilityService)
+                if (lockOnScreenOff || timer == Prefs.LOCK_TIMER_IMMEDIATE) {
                     clearUnlockedSession()
                 } else if (Prefs.getSessionUnlocked(this@AppLockAccessibilityService) != null) {
                     Prefs.setLastBackgroundNow(this@AppLockAccessibilityService)
