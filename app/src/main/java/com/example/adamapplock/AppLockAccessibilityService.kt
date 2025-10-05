@@ -49,8 +49,8 @@ class AppLockAccessibilityService : AccessibilityService() {
 
         val pkg = event.packageName?.toString() ?: return
 
-        // Ignore our own app and obvious system packages
-        if (pkg == packageName || pkg == "android" || pkg == "com.android.systemui") return
+        // Ignore events emitted by our own app
+        if (pkg == packageName) return
 
         val sessionPkg = Prefs.getSessionUnlocked(this)
         val sessionUid = Prefs.getSessionUid(this)
@@ -85,18 +85,20 @@ class AppLockAccessibilityService : AccessibilityService() {
                 SessionTimeoutScheduler.cancel()
                 return // stay unlocked within this app
             }
-            if (!isRealApp || sameUid) {
-                return // stay unlocked within this app's utilities
+            if (sameUid) {
+                return // stay unlocked within this app's shared UID surfaces
             }
 
             if (timerMillis > Prefs.LOCK_TIMER_IMMEDIATE) {
                 Prefs.setLastBackgroundNow(this)
                 SessionTimeoutScheduler.ensureInitialized(applicationContext)
                 SessionTimeoutScheduler.schedule()
+            } else {
+                clearUnlockedSession()
             }
 
-            if (timerMillis == Prefs.LOCK_TIMER_IMMEDIATE) {
-                clearUnlockedSession()
+            if (!isRealApp) {
+                return // treat home/recents surfaces as background without locking them
             }
         }
 
