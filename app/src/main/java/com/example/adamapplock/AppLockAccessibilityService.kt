@@ -17,8 +17,16 @@ class AppLockAccessibilityService : AccessibilityService() {
     private val screenOffReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {
-                // Screen off ends any unlocked session
-                Prefs.setSessionUnlocked(this@AppLockAccessibilityService, null, null)
+                // Screen off clears the session when configured to lock immediately, otherwise records the background time
+                val timer = Prefs.getLockTimerMillis(this@AppLockAccessibilityService)
+                val lockOnScreenOff = Prefs.lockOnScreenOff(this@AppLockAccessibilityService)
+                if (lockOnScreenOff || timer == Prefs.LOCK_TIMER_IMMEDIATE) {
+                    clearUnlockedSession()
+                } else if (Prefs.getSessionUnlocked(this@AppLockAccessibilityService) != null) {
+                    Prefs.setLastBackgroundNow(this@AppLockAccessibilityService)
+                    SessionTimeoutScheduler.ensureInitialized(applicationContext)
+                    SessionTimeoutScheduler.schedule()
+                }
             }
         }
     }
@@ -26,10 +34,13 @@ class AppLockAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
+        SessionTimeoutScheduler.ensureInitialized(applicationContext)
+        SessionTimeoutScheduler.schedule()
     }
 
     override fun onDestroy() {
         runCatching { unregisterReceiver(screenOffReceiver) }
+        SessionTimeoutScheduler.cancel()
         super.onDestroy()
     }
 
@@ -39,11 +50,27 @@ class AppLockAccessibilityService : AccessibilityService() {
 
         val pkg = event.packageName?.toString() ?: return
 
-        // Ignore our own app and obvious system packages
-        if (pkg == packageName || pkg == "android" || pkg == "com.android.systemui") return
+        // Ignore events emitted by our own app
+        if (pkg == packageName) return
 
         val sessionPkg = Prefs.getSessionUnlocked(this)
         val sessionUid = Prefs.getSessionUid(this)
+        val timerMillis = Prefs.getLockTimerMillis(this)
+        val now = System.currentTimeMillis()
+        val lastBackground = Prefs.lastBackground(this)
+        val sessionActive = when {
+            sessionPkg == null -> false
+            timerMillis == Prefs.LOCK_TIMER_IMMEDIATE -> true
+            lastBackground == 0L -> true
+            else -> (now - lastBackground) <= timerMillis
+        }
+
+        if (sessionPkg != null && !sessionActive) {
+            clearUnlockedSession()
+        }
+
+        val activeSessionPkg = if (sessionActive) sessionPkg else null
+        val activeSessionUid = if (sessionActive) sessionUid else null
 
         val isRealApp = hasLaunchIntent(pkg)
         val isLocked  = Prefs.isAppLocked(this, pkg)
@@ -51,14 +78,28 @@ class AppLockAccessibilityService : AccessibilityService() {
 
         // ---- 1) While in an unlocked session:
         // Allow: same package, non-launcher children (dialogs/tools), or same-UID siblings (e.g., Gallery editor)
-        if (sessionPkg != null) {
-            val samePkg = (pkg == sessionPkg)
-            val sameUid = (sessionUid != null && newUid != null && sessionUid == newUid)
-            if (samePkg || !isRealApp || sameUid) {
-                return // stay unlocked within this app+its utilities
+        if (activeSessionPkg != null) {
+            val samePkg = (pkg == activeSessionPkg)
+            val sameUid = (activeSessionUid != null && newUid != null && activeSessionUid == newUid)
+            if (samePkg) {
+                Prefs.clearLastBackground(this)
+                SessionTimeoutScheduler.cancel()
+                return // stay unlocked within this app
+            }
+            if (sameUid) {
+                return // stay unlocked within this app's shared UID surfaces
+            }
+
+            if (timerMillis > Prefs.LOCK_TIMER_IMMEDIATE) {
+                Prefs.setLastBackgroundNow(this)
+                SessionTimeoutScheduler.ensureInitialized(applicationContext)
+                SessionTimeoutScheduler.schedule()
             } else {
-                // We left to another real app -> end the session so it will require a fresh unlock
-                Prefs.setSessionUnlocked(this, null, null)
+                clearUnlockedSession()
+            }
+
+            if (!isRealApp) {
+                return // treat home/recents surfaces as background without locking them
             }
         }
 
@@ -85,13 +126,20 @@ class AppLockAccessibilityService : AccessibilityService() {
             }
             startActivity(i)
         } else {
-            // Visiting an unlocked "real" app ends any stale session
-            if (isRealApp) Prefs.setSessionUnlocked(this, null, null)
+            // Visiting an unlocked "real" app clears stale sessions when no active unlock window remains
+            if (isRealApp && activeSessionPkg == null) clearUnlockedSession()
         }
     }
 
     override fun onInterrupt() {
         // no-op
+    }
+
+    private fun clearUnlockedSession() {
+        Prefs.setSessionUnlocked(this, null, null)
+        Prefs.clearLastBackground(this)
+        SessionTimeoutScheduler.ensureInitialized(applicationContext)
+        SessionTimeoutScheduler.cancel()
     }
 
     private fun hasLaunchIntent(packageName: String): Boolean {
