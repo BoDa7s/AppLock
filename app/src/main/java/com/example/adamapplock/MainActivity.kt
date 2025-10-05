@@ -295,131 +295,176 @@ private fun PasscodeSetupScreen(onDone: () -> Unit) {
 }
 
 
+private data class LockTimerOption(
+    val durationMillis: Long,
+    val title: String,
+    val description: String
+)
+
+private val lockTimerOptions = listOf(
+    LockTimerOption(
+        durationMillis = Prefs.LOCK_TIMER_IMMEDIATE,
+        title = "Lock immediately",
+        description = "Require unlock whenever you close the app or the screen turns off."
+    ),
+    LockTimerOption(
+        durationMillis = 60_000L,
+        title = "After 1 minute",
+        description = "Keep apps unlocked for 1 minute of inactivity before requiring the passcode/biometric again."
+    ),
+    LockTimerOption(
+        durationMillis = 120_000L,
+        title = "After 2 minutes",
+        description = "Keep apps unlocked for 2 minutes of inactivity before requiring the passcode/biometric again."
+    ),
+    LockTimerOption(
+        durationMillis = 300_000L,
+        title = "After 5 minutes",
+        description = "Keep apps unlocked for 5 minutes of inactivity before requiring the passcode/biometric again."
+    ),
+    LockTimerOption(
+        durationMillis = 600_000L,
+        title = "After 10 minutes",
+        description = "Keep apps unlocked for 10 minutes of inactivity before requiring the passcode/biometric again."
+    )
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
     themeMode: ThemeMode,
     onThemeChange: (ThemeMode) -> Unit
 ) {
-    BackHandler { onBack() }  // system back pops you to Main/AppSelection
+    BackHandler { onBack() }
+
     val cs = MaterialTheme.colorScheme
     val ctx = LocalContext.current
     var useBiometric by remember { mutableStateOf(Prefs.useBiometric(ctx)) }
+    var timerExpanded by remember { mutableStateOf(false) }
+    var selectedTimerMillis by remember { mutableLongStateOf(Prefs.getLockTimerMillis(ctx)) }
+    val timerOptions = remember { lockTimerOptions }
+    val selectedTimerOption = remember(selectedTimerMillis) {
+        timerOptions.firstOrNull { it.durationMillis == selectedTimerMillis } ?: timerOptions.first()
+    }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(cs.background)
-            .navigationBarsPadding()   // keep content above gesture bar
-            .statusBarsPadding()      // avoid notch/status bar
-            //.verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp) // spacing between items
     ) {
-        // (small visual fix) this text should use onBackground, not background
-        //Text("Settings", color = cs.onBackground, style = MaterialTheme.typography.titleLarge)
-        Text("Security", style = MaterialTheme.typography.titleMedium, color = cs.primary)
-
-        // Change passcode Block
-        ChangePasswordRow()
-        //HorizontalDivider(Modifier, DividerDefaults.Thickness, color = cs.outlineVariant)
-        //Spacer(Modifier.height(16.dp))
-
-        // ---- Biometric
-        ListItem(
-            leadingContent = {
-                Icon(
-                    imageVector = Icons.Outlined.Fingerprint,
-                    contentDescription = null, // decorative
-                    tint = cs.onBackground
-                )
-            },
-            headlineContent = { Text("Use fingerprint", color = cs.onBackground) },
-            trailingContent = {
-
-                /*Switch(
-                    checked = useBiometric,
-                    onCheckedChange = {
-                        useBiometric = it
-                        Prefs.setUseBiometric(ctx, it)
-                    }
-                )*/
-
-                //// new switch with colors styles
-                Switch(
-                    checked = useBiometric,
-                    onCheckedChange = {
-                        useBiometric = it
-                        Prefs.setUseBiometric(ctx, it)
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedBorderColor = Color.Transparent,
-                        checkedThumbColor = cs.onPrimary,
-                        checkedTrackColor = cs.primary,
-                        uncheckedThumbColor = cs.onSurfaceVariant,
-                        uncheckedTrackColor = cs.surfaceVariant,
-                        uncheckedBorderColor = Color.Transparent
+        // --- Security
+        item { Text("Security", style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item { ChangePasswordRow() }
+        item {
+            ListItem(
+                leadingContent = { Icon(Icons.Outlined.Fingerprint, null, tint = cs.onBackground) },
+                headlineContent = { Text("Use fingerprint", color = cs.onBackground) },
+                trailingContent = {
+                    Switch(
+                        checked = useBiometric,
+                        onCheckedChange = {
+                            useBiometric = it
+                            Prefs.setUseBiometric(ctx, it)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedBorderColor = Color.Transparent,
+                            checkedThumbColor = cs.onPrimary,
+                            checkedTrackColor = cs.primary,
+                            uncheckedThumbColor = cs.onSurfaceVariant,
+                            uncheckedTrackColor = cs.surfaceVariant,
+                            uncheckedBorderColor = Color.Transparent
+                        )
                     )
-                )
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item { HorizontalDivider(color = cs.outlineVariant) }
 
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-
-        HorizontalDivider(Modifier, DividerDefaults.Thickness, color = cs.outlineVariant)
-
-        // ---- Theme
-        //Text("Theme", color = cs.onBackground)
-        Text("Theme", style = MaterialTheme.typography.titleMedium, color = cs.primary)
-        Column(Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = themeMode == ThemeMode.SYSTEM,
-                    onClick = { onThemeChange(ThemeMode.SYSTEM) }
+        // --- Lock timers
+        item { Text("Lock Timers", style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item {
+            ExposedDropdownMenuBox(expanded = timerExpanded, onExpandedChange = { timerExpanded = it }) {
+                OutlinedTextField(
+                    value = selectedTimerOption.title,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timerExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = cs.surface,
+                        unfocusedContainerColor = cs.surface,
+                        disabledContainerColor = cs.surface,
+                        focusedIndicatorColor = cs.primary,
+                        unfocusedIndicatorColor = cs.outline,
+                        disabledIndicatorColor = Color.Transparent
+                    ),
+                    singleLine = true,
+                    label = { Text("Select Timers") }
                 )
-                Text("System", color = cs.onBackground)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = themeMode == ThemeMode.LIGHT,
-                    onClick = { onThemeChange(ThemeMode.LIGHT) }
-                )
-                Text("Light", color = cs.onBackground)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = themeMode == ThemeMode.DARK,
-                    onClick = { onThemeChange(ThemeMode.DARK) }
-                )
-                Text("Dark", color = cs.onBackground)
+                ExposedDropdownMenu(expanded = timerExpanded, onDismissRequest = { timerExpanded = false }) {
+                    timerOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.title) },
+                            onClick = {
+                                timerExpanded = false
+                                selectedTimerMillis = option.durationMillis
+                                Prefs.setLockTimerMillis(ctx, option.durationMillis)
+                                Prefs.setSessionUnlocked(ctx, null, null)
+                            }
+                        )
+                    }
+                }
             }
         }
+        item {
+            Text(
+                text = selectedTimerOption.description,
+                color = cs.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        item { HorizontalDivider(color = cs.outlineVariant) }
 
-        // ---- About
-        HorizontalDivider(Modifier, DividerDefaults.Thickness, color = cs.outlineVariant)
-
-        Text("About", style = MaterialTheme.typography.titleMedium, color = cs.primary)
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                LabeledValue(label = "App version", value = getAppVersion(ctx))
-                HorizontalDivider(Modifier, DividerDefaults.Thickness, color = cs.outlineVariant)
-                LabeledValue(label = "Developer", value = "Adam Ali")
+        // --- Theme
+        item { Text("Theme", style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = themeMode == ThemeMode.SYSTEM, onClick = { onThemeChange(ThemeMode.SYSTEM) })
+                    Text("System", color = cs.onBackground)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = themeMode == ThemeMode.LIGHT, onClick = { onThemeChange(ThemeMode.LIGHT) })
+                    Text("Light", color = cs.onBackground)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = themeMode == ThemeMode.DARK, onClick = { onThemeChange(ThemeMode.DARK) })
+                    Text("Dark", color = cs.onBackground)
+                }
             }
         }
+        item { HorizontalDivider(color = cs.outlineVariant) }
 
+        // --- About
+        item { Text("About", style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item {
+            ElevatedCard(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LabeledValue(label = "App version", value = getAppVersion(ctx))
+                    HorizontalDivider(color = cs.outlineVariant)
+                    LabeledValue(label = "Developer", value = "Adam Ali")
+                }
+            }
+        }
+        item { Spacer(Modifier.height(8.dp)) } // small bottom buffer
     }
 }
-
 
 data class AppEntry(
     val pkg: String,
