@@ -17,9 +17,14 @@ class AppLockAccessibilityService : AccessibilityService() {
     private val screenOffReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {
-                // Screen off ends any unlocked session when the timer is immediate
-                if (Prefs.getLockTimerMillis(this@AppLockAccessibilityService) == Prefs.LOCK_TIMER_IMMEDIATE) {
-                    Prefs.setSessionUnlocked(this@AppLockAccessibilityService, null, null)
+                // Screen off either clears immediate sessions or records when the app went background
+                val timer = Prefs.getLockTimerMillis(this@AppLockAccessibilityService)
+                if (timer == Prefs.LOCK_TIMER_IMMEDIATE) {
+                    clearUnlockedSession()
+                } else if (Prefs.getSessionUnlocked(this@AppLockAccessibilityService) != null) {
+                    Prefs.setLastBackgroundNow(this@AppLockAccessibilityService)
+                    SessionTimeoutScheduler.ensureInitialized(applicationContext)
+                    SessionTimeoutScheduler.schedule()
                 }
             }
         }
@@ -28,10 +33,13 @@ class AppLockAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
+        SessionTimeoutScheduler.ensureInitialized(applicationContext)
+        SessionTimeoutScheduler.schedule()
     }
 
     override fun onDestroy() {
         runCatching { unregisterReceiver(screenOffReceiver) }
+        SessionTimeoutScheduler.cancel()
         super.onDestroy()
     }
 
@@ -53,7 +61,7 @@ class AppLockAccessibilityService : AccessibilityService() {
         val withinWindow = sessionPkg != null && (!hasWindow || (lastUnlock != 0L && (now - lastUnlock) <= timerMillis))
 
         if (sessionPkg != null && !withinWindow) {
-            Prefs.setSessionUnlocked(this, null, null)
+            clearUnlockedSession()
         }
 
         val activeSessionPkg = if (withinWindow) sessionPkg else null
@@ -68,13 +76,23 @@ class AppLockAccessibilityService : AccessibilityService() {
         if (activeSessionPkg != null) {
             val samePkg = (pkg == activeSessionPkg)
             val sameUid = (activeSessionUid != null && newUid != null && activeSessionUid == newUid)
-            if (samePkg || !isRealApp || sameUid) {
-                return // stay unlocked within this app+its utilities
-            } else {
-                // Immediate timer option: leaving the app clears the session right away
-                if (timerMillis == Prefs.LOCK_TIMER_IMMEDIATE && isRealApp) {
-                    Prefs.setSessionUnlocked(this, null, null)
-                }
+            if (samePkg) {
+                Prefs.clearLastBackground(this)
+                SessionTimeoutScheduler.cancel()
+                return // stay unlocked within this app
+            }
+            if (!isRealApp || sameUid) {
+                return // stay unlocked within this app's utilities
+            }
+
+            if (timerMillis > Prefs.LOCK_TIMER_IMMEDIATE) {
+                Prefs.setLastBackgroundNow(this)
+                SessionTimeoutScheduler.ensureInitialized(applicationContext)
+                SessionTimeoutScheduler.schedule()
+            }
+
+            if (timerMillis == Prefs.LOCK_TIMER_IMMEDIATE) {
+                clearUnlockedSession()
             }
         }
 
@@ -102,12 +120,19 @@ class AppLockAccessibilityService : AccessibilityService() {
             startActivity(i)
         } else {
             // Visiting an unlocked "real" app ends any stale session
-            if (isRealApp) Prefs.setSessionUnlocked(this, null, null)
+            if (isRealApp) clearUnlockedSession()
         }
     }
 
     override fun onInterrupt() {
         // no-op
+    }
+
+    private fun clearUnlockedSession() {
+        Prefs.setSessionUnlocked(this, null, null)
+        Prefs.clearLastBackground(this)
+        SessionTimeoutScheduler.ensureInitialized(applicationContext)
+        SessionTimeoutScheduler.cancel()
     }
 
     private fun hasLaunchIntent(packageName: String): Boolean {

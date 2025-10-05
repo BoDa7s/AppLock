@@ -17,6 +17,7 @@ object Prefs {
     private const val KEY_LOCKED            = "locked_apps"
     private const val KEY_USE_BIOMETRIC     = "use_biometric"
     private const val KEY_LAST_UNLOCK       = "last_unlock"
+    private const val KEY_LAST_BACKGROUND   = "last_background"
     private const val KEY_SESSION_UNLOCKED  = "session_unlocked_pkg"
     private const val KEY_SESSION_UID       = "session_unlocked_uid"
     private const val KEY_LOCK_TIMER_MS     = "lock_timer_ms"
@@ -86,6 +87,17 @@ object Prefs {
 
     fun lastUnlock(ctx: Context): Long =
         sp(ctx).getLong(KEY_LAST_UNLOCK, 0L)
+
+    fun setLastBackgroundNow(ctx: Context) {
+        sp(ctx).edit { putLong(KEY_LAST_BACKGROUND, System.currentTimeMillis()) }
+    }
+
+    fun clearLastBackground(ctx: Context) {
+        sp(ctx).edit { remove(KEY_LAST_BACKGROUND) }
+    }
+
+    fun lastBackground(ctx: Context): Long =
+        sp(ctx).getLong(KEY_LAST_BACKGROUND, 0L)
 
     // -------- Foreground session (package + UID) --------
     // Store: current unlocked app package and its UID.

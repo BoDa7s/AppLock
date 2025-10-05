@@ -161,6 +161,9 @@ class LockOverlayActivity : FragmentActivity() {
 
         // Mark this foreground session as unlocked (pkg + uid)
         Prefs.setSessionUnlocked(this, pkg, uid)
+        SessionTimeoutScheduler.ensureInitialized(applicationContext)
+        SessionTimeoutScheduler.cancel()
+        Prefs.clearLastBackground(this)
         Prefs.setLastUnlockNow(this)
 
         // Relaunch the target app so the user returns there
