@@ -56,16 +56,20 @@ class AppLockAccessibilityService : AccessibilityService() {
         val sessionUid = Prefs.getSessionUid(this)
         val timerMillis = Prefs.getLockTimerMillis(this)
         val now = System.currentTimeMillis()
-        val lastUnlock = Prefs.lastUnlock(this)
-        val hasWindow = timerMillis != Prefs.LOCK_TIMER_IMMEDIATE
-        val withinWindow = sessionPkg != null && (!hasWindow || (lastUnlock != 0L && (now - lastUnlock) <= timerMillis))
+        val lastBackground = Prefs.lastBackground(this)
+        val sessionActive = when {
+            sessionPkg == null -> false
+            timerMillis == Prefs.LOCK_TIMER_IMMEDIATE -> true
+            lastBackground == 0L -> true
+            else -> (now - lastBackground) <= timerMillis
+        }
 
-        if (sessionPkg != null && !withinWindow) {
+        if (sessionPkg != null && !sessionActive) {
             clearUnlockedSession()
         }
 
-        val activeSessionPkg = if (withinWindow) sessionPkg else null
-        val activeSessionUid = if (withinWindow) sessionUid else null
+        val activeSessionPkg = if (sessionActive) sessionPkg else null
+        val activeSessionUid = if (sessionActive) sessionUid else null
 
         val isRealApp = hasLaunchIntent(pkg)
         val isLocked  = Prefs.isAppLocked(this, pkg)
@@ -119,8 +123,8 @@ class AppLockAccessibilityService : AccessibilityService() {
             }
             startActivity(i)
         } else {
-            // Visiting an unlocked "real" app ends any stale session
-            if (isRealApp) clearUnlockedSession()
+            // Visiting an unlocked "real" app clears stale sessions when no active unlock window remains
+            if (isRealApp && activeSessionPkg == null) clearUnlockedSession()
         }
     }
 
