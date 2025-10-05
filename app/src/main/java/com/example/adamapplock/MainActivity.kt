@@ -45,6 +45,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.ScreenLockRotation
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -346,6 +347,7 @@ fun SettingsScreen(
     val cs = MaterialTheme.colorScheme
     val ctx = LocalContext.current
     var useBiometric by remember { mutableStateOf(Prefs.useBiometric(ctx)) }
+    var lockOnScreenOff by remember { mutableStateOf(Prefs.lockOnScreenOff(ctx)) }
     var timerExpanded by remember { mutableStateOf(false) }
     var selectedTimerMillis by remember { mutableLongStateOf(Prefs.getLockTimerMillis(ctx)) }
     val timerOptions = remember { lockTimerOptions }
@@ -426,6 +428,33 @@ fun SettingsScreen(
                     }
                 }
             }
+        }
+        item {
+            ListItem(
+                leadingContent = { Icon(Icons.Outlined.ScreenLockRotation, null, tint = cs.onBackground) },
+                headlineContent = { Text("Lock immediately when screen turns off", color = cs.onBackground) },
+                supportingContent = {
+                    Text("If enabled, the app locks when the display sleeps even if a timer is set.", color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                },
+                trailingContent = {
+                    Switch(
+                        checked = lockOnScreenOff,
+                        onCheckedChange = { enabled ->
+                            lockOnScreenOff = enabled
+                            Prefs.setLockOnScreenOff(ctx, enabled)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedBorderColor = Color.Transparent,
+                            checkedThumbColor = cs.onPrimary,
+                            checkedTrackColor = cs.primary,
+                            uncheckedThumbColor = cs.onSurfaceVariant,
+                            uncheckedTrackColor = cs.surfaceVariant,
+                            uncheckedBorderColor = Color.Transparent
+                        )
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
         item {
             Text(

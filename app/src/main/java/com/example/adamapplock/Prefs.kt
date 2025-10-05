@@ -21,6 +21,7 @@ object Prefs {
     private const val KEY_SESSION_UNLOCKED  = "session_unlocked_pkg"
     private const val KEY_SESSION_UID       = "session_unlocked_uid"
     private const val KEY_LOCK_TIMER_MS     = "lock_timer_ms"
+    private const val KEY_LOCK_ON_SCREEN_OFF = "lock_on_screen_off"
 
     private const val KEY_THEME_MODE = "theme_mode"
 
@@ -136,6 +137,15 @@ object Prefs {
 
     fun setLockTimerMillis(ctx: Context, durationMillis: Long) {
         sp(ctx).edit { putLong(KEY_LOCK_TIMER_MS, durationMillis) }
+    }
+
+
+    // -------- Screen-off behavior --------
+    fun lockOnScreenOff(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_LOCK_ON_SCREEN_OFF, false)
+
+    fun setLockOnScreenOff(ctx: Context, enabled: Boolean) {
+        sp(ctx).edit { putBoolean(KEY_LOCK_ON_SCREEN_OFF, enabled) }
     }
 
 
