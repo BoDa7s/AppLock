@@ -17,8 +17,10 @@ class AppLockAccessibilityService : AccessibilityService() {
     private val screenOffReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {
-                // Screen off ends any unlocked session
-                Prefs.setSessionUnlocked(this@AppLockAccessibilityService, null, null)
+                // Screen off ends any unlocked session when the timer is immediate
+                if (Prefs.getLockTimerMillis(this@AppLockAccessibilityService) == Prefs.LOCK_TIMER_IMMEDIATE) {
+                    Prefs.setSessionUnlocked(this@AppLockAccessibilityService, null, null)
+                }
             }
         }
     }
@@ -44,6 +46,18 @@ class AppLockAccessibilityService : AccessibilityService() {
 
         val sessionPkg = Prefs.getSessionUnlocked(this)
         val sessionUid = Prefs.getSessionUid(this)
+        val timerMillis = Prefs.getLockTimerMillis(this)
+        val now = System.currentTimeMillis()
+        val lastUnlock = Prefs.lastUnlock(this)
+        val hasWindow = timerMillis != Prefs.LOCK_TIMER_IMMEDIATE
+        val withinWindow = sessionPkg != null && (!hasWindow || (lastUnlock != 0L && (now - lastUnlock) <= timerMillis))
+
+        if (sessionPkg != null && !withinWindow) {
+            Prefs.setSessionUnlocked(this, null, null)
+        }
+
+        val activeSessionPkg = if (withinWindow) sessionPkg else null
+        val activeSessionUid = if (withinWindow) sessionUid else null
 
         val isRealApp = hasLaunchIntent(pkg)
         val isLocked  = Prefs.isAppLocked(this, pkg)
@@ -51,14 +65,16 @@ class AppLockAccessibilityService : AccessibilityService() {
 
         // ---- 1) While in an unlocked session:
         // Allow: same package, non-launcher children (dialogs/tools), or same-UID siblings (e.g., Gallery editor)
-        if (sessionPkg != null) {
-            val samePkg = (pkg == sessionPkg)
-            val sameUid = (sessionUid != null && newUid != null && sessionUid == newUid)
+        if (activeSessionPkg != null) {
+            val samePkg = (pkg == activeSessionPkg)
+            val sameUid = (activeSessionUid != null && newUid != null && activeSessionUid == newUid)
             if (samePkg || !isRealApp || sameUid) {
                 return // stay unlocked within this app+its utilities
             } else {
-                // We left to another real app -> end the session so it will require a fresh unlock
-                Prefs.setSessionUnlocked(this, null, null)
+                // Immediate timer option: leaving the app clears the session right away
+                if (timerMillis == Prefs.LOCK_TIMER_IMMEDIATE && isRealApp) {
+                    Prefs.setSessionUnlocked(this, null, null)
+                }
             }
         }
 

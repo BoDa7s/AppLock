@@ -19,6 +19,7 @@ object Prefs {
     private const val KEY_LAST_UNLOCK       = "last_unlock"
     private const val KEY_SESSION_UNLOCKED  = "session_unlocked_pkg"
     private const val KEY_SESSION_UID       = "session_unlocked_uid"
+    private const val KEY_LOCK_TIMER_MS     = "lock_timer_ms"
 
     private const val KEY_THEME_MODE = "theme_mode"
 
@@ -114,6 +115,16 @@ object Prefs {
                 p.getInt(KEY_SESSION_UID, -1).takeIf { it != -1 }
             } else null
         }
+
+    // -------- Session timer --------
+    const val LOCK_TIMER_IMMEDIATE: Long = 0L
+
+    fun getLockTimerMillis(ctx: Context): Long =
+        sp(ctx).getLong(KEY_LOCK_TIMER_MS, LOCK_TIMER_IMMEDIATE)
+
+    fun setLockTimerMillis(ctx: Context, durationMillis: Long) {
+        sp(ctx).edit { putLong(KEY_LOCK_TIMER_MS, durationMillis) }
+    }
 
 
 }

@@ -295,6 +295,41 @@ private fun PasscodeSetupScreen(onDone: () -> Unit) {
 }
 
 
+private data class LockTimerOption(
+    val durationMillis: Long,
+    val title: String,
+    val description: String
+)
+
+private val lockTimerOptions = listOf(
+    LockTimerOption(
+        durationMillis = Prefs.LOCK_TIMER_IMMEDIATE,
+        title = "Lock immediately",
+        description = "Require unlock whenever you close the app or the screen turns off."
+    ),
+    LockTimerOption(
+        durationMillis = 60_000L,
+        title = "After 1 minute",
+        description = "Keep apps unlocked for 1 minute of inactivity before requiring the passcode again."
+    ),
+    LockTimerOption(
+        durationMillis = 120_000L,
+        title = "After 2 minutes",
+        description = "Keep apps unlocked for 2 minutes of inactivity before requiring the passcode again."
+    ),
+    LockTimerOption(
+        durationMillis = 300_000L,
+        title = "After 5 minutes",
+        description = "Keep apps unlocked for 5 minutes of inactivity before requiring the passcode again."
+    ),
+    LockTimerOption(
+        durationMillis = 600_000L,
+        title = "After 10 minutes",
+        description = "Keep apps unlocked for 10 minutes of inactivity before requiring the passcode again."
+    )
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -305,6 +340,12 @@ fun SettingsScreen(
     val cs = MaterialTheme.colorScheme
     val ctx = LocalContext.current
     var useBiometric by remember { mutableStateOf(Prefs.useBiometric(ctx)) }
+    var timerExpanded by remember { mutableStateOf(false) }
+    var selectedTimerMillis by remember { mutableStateOf(Prefs.getLockTimerMillis(ctx)) }
+    val timerOptions = remember { lockTimerOptions }
+    val selectedTimerOption = remember(selectedTimerMillis) {
+        timerOptions.firstOrNull { it.durationMillis == selectedTimerMillis } ?: timerOptions.first()
+    }
 
     Column(
         modifier = Modifier
@@ -368,6 +409,56 @@ fun SettingsScreen(
 
 
         HorizontalDivider(Modifier, DividerDefaults.Thickness, color = cs.outlineVariant)
+
+        Text("App Lock Timer", style = MaterialTheme.typography.titleMedium, color = cs.primary)
+
+        ExposedDropdownMenuBox(
+            expanded = timerExpanded,
+            onExpandedChange = { timerExpanded = it }
+        ) {
+            OutlinedTextField(
+                value = selectedTimerOption.title,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timerExpanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = cs.surface,
+                    unfocusedContainerColor = cs.surface,
+                    disabledContainerColor = cs.surface,
+                    focusedIndicatorColor = cs.primary,
+                    unfocusedIndicatorColor = cs.outline,
+                    disabledIndicatorColor = Color.Transparent
+                ),
+                singleLine = true,
+                label = { Text("App Lock Timer") }
+            )
+
+            ExposedDropdownMenu(
+                expanded = timerExpanded,
+                onDismissRequest = { timerExpanded = false }
+            ) {
+                timerOptions.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.title) },
+                        onClick = {
+                            timerExpanded = false
+                            selectedTimerMillis = option.durationMillis
+                            Prefs.setLockTimerMillis(ctx, option.durationMillis)
+                            Prefs.setSessionUnlocked(ctx, null, null)
+                        }
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = selectedTimerOption.description,
+            color = cs.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
+        )
 
         // ---- Theme
         //Text("Theme", color = cs.onBackground)
