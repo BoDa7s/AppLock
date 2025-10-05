@@ -308,6 +308,11 @@ private val lockTimerOptions = listOf(
         description = "Require unlock whenever you close the app or the screen turns off."
     ),
     LockTimerOption(
+        durationMillis = 30_000L,
+        title = "After 30 seconds",
+        description = "Keep apps unlocked for 30 seconds of inactivity before requiring the passcode/biometric again."
+    ),
+    LockTimerOption(
         durationMillis = 60_000L,
         title = "After 1 minute",
         description = "Keep apps unlocked for 1 minute of inactivity before requiring the passcode/biometric again."
