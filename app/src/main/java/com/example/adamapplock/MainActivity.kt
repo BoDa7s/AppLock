@@ -572,6 +572,8 @@ private fun AppSelectionScreen(
                         Text(text = emptyStateMessage, color = cs.onSurfaceVariant)
                     }
                 }
+
+                item { Spacer(Modifier.height(24.dp)) }
             }
 
             else -> {
