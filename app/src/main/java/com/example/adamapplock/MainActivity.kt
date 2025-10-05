@@ -430,6 +430,33 @@ fun SettingsScreen(
             }
         }
         item {
+            ListItem(
+                leadingContent = { Icon(Icons.Outlined.ScreenLockRotation, null, tint = cs.onBackground) },
+                headlineContent = { Text("Lock immediately when screen turns off", color = cs.onBackground) },
+                supportingContent = {
+                    Text("If enabled, the app locks when the display sleeps even if a timer is set.", color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                },
+                trailingContent = {
+                    Switch(
+                        checked = lockOnScreenOff,
+                        onCheckedChange = { enabled ->
+                            lockOnScreenOff = enabled
+                            Prefs.setLockOnScreenOff(ctx, enabled)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedBorderColor = Color.Transparent,
+                            checkedThumbColor = cs.onPrimary,
+                            checkedTrackColor = cs.primary,
+                            uncheckedThumbColor = cs.onSurfaceVariant,
+                            uncheckedTrackColor = cs.surfaceVariant,
+                            uncheckedBorderColor = Color.Transparent
+                        )
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item {
             Text(
                 text = selectedTimerOption.description,
                 color = cs.onSurfaceVariant,
