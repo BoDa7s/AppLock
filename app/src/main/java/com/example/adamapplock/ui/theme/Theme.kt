@@ -44,16 +44,10 @@ fun AdamAppLockTheme(
     }
 
     val colorScheme = remember(darkTheme, supportsDynamic, oemStyle, context) {
-        when {
-            supportsDynamic && oemStyle == OemStyle.PIXEL -> {
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            }
-
-            supportsDynamic && oemStyle == OemStyle.OTHER -> {
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            }
-
-            else -> fallbackColorSchemeFor(oemStyle, darkTheme)
+        if (supportsDynamic) {
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        } else {
+            fallbackColorSchemeFor(oemStyle, darkTheme)
         }
     }
 
