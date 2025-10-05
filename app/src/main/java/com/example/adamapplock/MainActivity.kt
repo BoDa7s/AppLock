@@ -175,7 +175,7 @@ fun getAppVersion(ctx: Context): String {
         }
         val code = if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode.toString()
         else @Suppress("DEPRECATION") pi.versionCode.toString()
-        "${pi.versionName} ($code)"
+        "${pi.versionName}" //+ " ($code)"
     } catch (_: Exception) {
         "Unknown"
     }
