@@ -24,12 +24,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
-import androidx.fragment.app.FragmentActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.example.adamapplock.ui.theme.AdamAppLockTheme
 import androidx.compose.material3.*
 import androidx.compose.ui.text.input.ImeAction
@@ -37,11 +38,12 @@ import androidx.compose.ui.text.input.ImeAction
 
 const val EXTRA_LOCKED_PKG = "locked_pkg"
 
-class LockOverlayActivity : FragmentActivity() {
+class LockOverlayActivity : AppCompatActivity() {
 
     private var lockedPkg: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        LocaleManager.applyStoredLocale(this)
         super.onCreate(savedInstanceState)
 
         lockedPkg = intent.getStringExtra(EXTRA_LOCKED_PKG)
@@ -67,7 +69,7 @@ class LockOverlayActivity : FragmentActivity() {
 
 
 
-            AdamAppLockTheme(themeMode = Prefs.getThemeMode(this)) {
+            AdamAppLockTheme(themeMode = Prefs.getThemeMode(this@LockOverlayActivity)) {
                 val useBiometric = remember { Prefs.useBiometric(ctx) }
 
                 // Auto-start biometric if enabled & available
@@ -87,14 +89,14 @@ class LockOverlayActivity : FragmentActivity() {
                         // keep digits-only in case the field lets other chars in
                         val digitsOnly = pass.filter { it.isDigit() }
 
-                        if (digitsOnly.isEmpty()) {
-                            Toast.makeText(
-                                this,
-                                "Enter your passcode", /// when field is empty, show this message
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            val chars = digitsOnly.toCharArray()
+                    if (digitsOnly.isEmpty()) {
+                        Toast.makeText(
+                            this,
+                            getString(R.string.passcode_empty_error), /// when field is empty, show this message
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        val chars = digitsOnly.toCharArray()
 
                             val ok = repo.verifyPassword(chars)
 
@@ -104,7 +106,7 @@ class LockOverlayActivity : FragmentActivity() {
                             if (ok) {
                                 completeUnlock()
                             } else {
-                                Toast.makeText(this, "Wrong passcode", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this, getString(R.string.passcode_wrong_error), Toast.LENGTH_SHORT).show()
                             }
                         } //// end edit
                     }
@@ -147,9 +149,9 @@ class LockOverlayActivity : FragmentActivity() {
         )
 
         val info = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Unlock")
-            .setSubtitle("Use fingerprint to unlock")
-            .setNegativeButtonText("Use passcode")
+            .setTitle(getString(R.string.biometric_prompt_title))
+            .setSubtitle(getString(R.string.biometric_prompt_subtitle))
+            .setNegativeButtonText(getString(R.string.biometric_prompt_use_passcode))
             .build()
 
         prompt.authenticate(info)
@@ -228,11 +230,11 @@ private fun LockScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("App Locked", color = cs.background, style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.app_locked_title), color = cs.background, style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(16.dp))
 
         Text(
-            "App Locked",
+            stringResource(R.string.app_locked_title),
             color = MaterialTheme.colorScheme.onBackground,
             style = MaterialTheme.typography.titleLarge
         )
@@ -243,17 +245,19 @@ private fun LockScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(focusRequester),
-            label = { Text("Passcode") },
+            label = { Text(stringResource(R.string.lock_screen_passcode_label)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,imeAction = ImeAction.Done), // NumberPassword if available in your version
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            ), // NumberPassword if available in your version
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             // ← No colors override. Let Material3 pick from MaterialTheme.colorScheme (dynamic)
         )
@@ -264,7 +268,7 @@ private fun LockScreen(
         Button(
             onClick = { onUnlock(passcode) },
             modifier = Modifier.fillMaxWidth()
-        ) { Text("Unlock") }
+        ) { Text(stringResource(R.string.unlock_action)) }
 
         if (useBiometric && biometricAvailable) {
             Spacer(Modifier.height(12.dp))
@@ -276,7 +280,7 @@ private fun LockScreen(
                     onBiometric()
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Use fingerprint") }
+            ) { Text(stringResource(R.string.use_fingerprint)) }
         }
     }
 }

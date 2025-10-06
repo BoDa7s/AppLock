@@ -1,3 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AdamAppLock</string>
+
+    <!-- Tabs -->
+    <string name="tab_main">Main</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Passcode setup -->
+    <string name="passcode_setup_title">Set a passcode</string>
+    <string name="passcode_enter_label">Enter passcode</string>
+    <string name="passcode_confirm_label">Confirm passcode</string>
+    <string name="passcode_length_error_range">Passcode must be %1$d–%2$d digits</string>
+    <string name="passcode_mismatch_error">Passcodes do not match</string>
+    <string name="passcode_digits_only_error">Digits only</string>
+    <string name="passcode_updated_message">Passcode updated</string>
+    <string name="current_passcode_incorrect_message">Current passcode incorrect</string>
+    <string name="passcode_empty_error">Enter your passcode</string>
+    <string name="passcode_wrong_error">Wrong passcode</string>
+
+    <!-- Common actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="unlock_action">Unlock</string>
+
+    <!-- Settings sections -->
+    <string name="settings_section_security">Security</string>
+    <string name="settings_section_lock_timers">Lock Timers</string>
+    <string name="settings_section_language">App Language</string>
+    <string name="settings_section_theme">Theme</string>
+    <string name="settings_section_about">About</string>
+
+    <!-- Settings content -->
+    <string name="use_fingerprint">Use fingerprint</string>
+    <string name="settings_select_timer">Select timer</string>
+    <string name="lock_screen_off_title">Lock immediately when screen turns off</string>
+    <string name="lock_screen_off_description">If enabled, the app locks when the display sleeps even if a timer is set.</string>
+    <string name="app_language_label">App language</string>
+    <string name="language_system_default">Use device language</string>
+    <string name="language_english">English</string>
+    <string name="language_arabic">Arabic</string>
+    <string name="language_spanish">Spanish</string>
+    <string name="language_french">French</string>
+    <string name="language_hindi">Hindi</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="about_app_version_label">App version</string>
+    <string name="about_developer_label">Developer</string>
+    <string name="developer_name">Adam Ali</string>
+
+    <!-- Lock timer descriptions -->
+    <string name="lock_timer_immediate_title">Lock immediately</string>
+    <string name="lock_timer_immediate_description">Require unlock whenever you close the app or the screen turns off.</string>
+    <string name="lock_timer_30_seconds_title">After 30 seconds</string>
+    <string name="lock_timer_30_seconds_description">Keep apps unlocked for 30 seconds of inactivity before requiring the passcode or biometric again.</string>
+    <string name="lock_timer_1_minute_title">After 1 minute</string>
+    <string name="lock_timer_1_minute_description">Keep apps unlocked for 1 minute of inactivity before requiring the passcode or biometric again.</string>
+    <string name="lock_timer_2_minutes_title">After 2 minutes</string>
+    <string name="lock_timer_2_minutes_description">Keep apps unlocked for 2 minutes of inactivity before requiring the passcode or biometric again.</string>
+    <string name="lock_timer_5_minutes_title">After 5 minutes</string>
+    <string name="lock_timer_5_minutes_description">Keep apps unlocked for 5 minutes of inactivity before requiring the passcode or biometric again.</string>
+    <string name="lock_timer_10_minutes_title">After 10 minutes</string>
+    <string name="lock_timer_10_minutes_description">Keep apps unlocked for 10 minutes of inactivity before requiring the passcode or biometric again.</string>
+
+    <!-- App selection -->
+    <string name="segment_unlocked">Unlocked</string>
+    <string name="segment_locked">Locked</string>
+    <string name="no_launchable_apps_found">No launchable apps found</string>
+    <string name="no_locked_apps_yet">No locked apps yet</string>
+    <string name="all_apps_locked">All of your apps are currently locked</string>
+    <string name="no_apps_match_search">No apps match your search</string>
+    <string name="search_apps">Search apps</string>
+
+    <!-- Change passcode -->
+    <string name="change_passcode_title">Change passcode</string>
+    <string name="set_passcode_title">Set passcode</string>
+    <string name="update_master_passcode">Update your master passcode</string>
+    <string name="set_master_passcode">Set a master passcode</string>
+    <string name="current_passcode_label">Current passcode</string>
+    <string name="new_passcode_label">New passcode</string>
+    <string name="confirm_new_passcode_label">Confirm new passcode</string>
+    <string name="passcode_visibility_show">Show</string>
+    <string name="passcode_visibility_hide">Hide</string>
+
+    <!-- Lock screen -->
+    <string name="app_locked_title">App Locked</string>
+    <string name="lock_screen_passcode_label">Passcode</string>
+    <string name="biometric_prompt_title">Unlock</string>
+    <string name="biometric_prompt_subtitle">Use fingerprint to unlock</string>
+    <string name="biometric_prompt_use_passcode">Use passcode</string>
+
+    <!-- Misc -->
+    <string name="version_unknown">Unknown</string>
 </resources>

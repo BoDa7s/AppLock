@@ -49,8 +49,9 @@ import androidx.compose.material.icons.outlined.ScreenLockRotation
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -65,7 +66,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlin.math.roundToInt
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
+import androidx.annotation.StringRes
 import androidx.core.graphics.createBitmap
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -76,9 +78,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        LocaleManager.applyStoredLocale(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -110,7 +113,7 @@ class MainActivity : ComponentActivity() {
 
                     false -> {
                         var selectedTab by remember { mutableIntStateOf(0) } // 0 = Main, 1 = Settings
-                        val tabs = listOf("Main", "Settings")
+                        val tabs = listOf(R.string.tab_main, R.string.tab_settings)
                         val cs = MaterialTheme.colorScheme
                         val appListViewModel: AppListViewModel = viewModel()
 
@@ -125,7 +128,7 @@ class MainActivity : ComponentActivity() {
                             TabRow(selectedTabIndex = selectedTab) {
                                 tabs.forEachIndexed { i, t ->
                                     Tab(selected = selectedTab == i, onClick = { selectedTab = i }) {
-                                        Text(t, modifier = Modifier.padding(12.dp))
+                                        Text(stringResource(t), modifier = Modifier.padding(12.dp))
                                     }
                                 }
                             }
@@ -176,9 +179,9 @@ fun getAppVersion(ctx: Context): String {
         }
         val code = if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode.toString()
         else @Suppress("DEPRECATION") pi.versionCode.toString()
-        "${pi.versionName}" //+ " ($code)"
+        pi.versionName ?: ctx.getString(R.string.version_unknown) //+ " ($code)"
     } catch (_: Exception) {
-        "Unknown"
+        ctx.getString(R.string.version_unknown)
     }
 }
 
@@ -194,6 +197,9 @@ private fun PasscodeSetupScreen(onDone: () -> Unit) {
 
     var p1 by remember { mutableStateOf("") }
     var p2 by remember { mutableStateOf("") }
+
+    val minDigits = 4
+    val maxDigits = 8
 
     //val focusManager = LocalFocusManager.current
     //val keyboardController = LocalSoftwareKeyboardController.current
@@ -218,16 +224,16 @@ private fun PasscodeSetupScreen(onDone: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Set a passcode", color = cs.onBackground, style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.passcode_setup_title), color = cs.onBackground, style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
             value = p1,
-            onValueChange = { raw -> p1 = raw.filter { it.isDigit() }.take(8) }, // digits only, max 8
+            onValueChange = { raw -> p1 = raw.filter { it.isDigit() }.take(maxDigits) }, // digits only, max 8
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(firstFR),
-            label = { Text("Enter passcode") },
+            label = { Text(stringResource(R.string.passcode_enter_label)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number, // NumberPassword if your version has it
@@ -244,11 +250,11 @@ private fun PasscodeSetupScreen(onDone: () -> Unit) {
 
         OutlinedTextField(
             value = p2,
-            onValueChange = { raw -> p2 = raw.filter { it.isDigit() }.take(8) },
+            onValueChange = { raw -> p2 = raw.filter { it.isDigit() }.take(maxDigits) },
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(secondFR),
-            label = { Text("Confirm passcode") },
+            label = { Text(stringResource(R.string.passcode_confirm_label)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number,
@@ -256,7 +262,7 @@ private fun PasscodeSetupScreen(onDone: () -> Unit) {
             ),
             keyboardActions = KeyboardActions(
                 onDone = {
-                    val okLen = p1.length in 4..8
+                    val okLen = p1.length in minDigits..maxDigits
                     if (okLen && p1 == p2) {
                         repo.setNewPassword(p1.toCharArray()) // make setNewPassword use .commit()
                         p1 = ""; p2 = ""
@@ -264,7 +270,7 @@ private fun PasscodeSetupScreen(onDone: () -> Unit) {
                     } else {
                         Toast.makeText(
                             ctx,
-                            if (!okLen) "Passcode must be 4–8 digits" else "Passcodes do not match",
+                            if (!okLen) ctx.getString(R.string.passcode_length_error_range, minDigits, maxDigits) else ctx.getString(R.string.passcode_mismatch_error),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -278,60 +284,60 @@ private fun PasscodeSetupScreen(onDone: () -> Unit) {
 
         Button(
             onClick = {
-                val okLen = p1.length in 4..8
+                val okLen = p1.length in minDigits..maxDigits
                 if (okLen && p1 == p2) {
                     repo.setNewPassword(p1.toCharArray())
                     onDone() // tell parent to switch UI (see section B)
                 } else {
                     Toast.makeText(
                         ctx,
-                        if (!okLen) "Passcode must be 4–8 digits" else "Passcodes do not match",
+                        if (!okLen) ctx.getString(R.string.passcode_length_error_range, minDigits, maxDigits) else ctx.getString(R.string.passcode_mismatch_error),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             },
             modifier = Modifier.fillMaxWidth()
-        ) { Text("Save") }
+        ) { Text(stringResource(R.string.action_save)) }
     }
 }
 
 
 private data class LockTimerOption(
     val durationMillis: Long,
-    val title: String,
-    val description: String
+    @StringRes val titleRes: Int,
+    @StringRes val descriptionRes: Int
 )
 
 private val lockTimerOptions = listOf(
     LockTimerOption(
         durationMillis = Prefs.LOCK_TIMER_IMMEDIATE,
-        title = "Lock immediately",
-        description = "Require unlock whenever you close the app or the screen turns off."
+        titleRes = R.string.lock_timer_immediate_title,
+        descriptionRes = R.string.lock_timer_immediate_description
     ),
     LockTimerOption(
         durationMillis = 30_000L,
-        title = "After 30 seconds",
-        description = "Keep apps unlocked for 30 seconds of inactivity before requiring the passcode/biometric again."
+        titleRes = R.string.lock_timer_30_seconds_title,
+        descriptionRes = R.string.lock_timer_30_seconds_description
     ),
     LockTimerOption(
         durationMillis = 60_000L,
-        title = "After 1 minute",
-        description = "Keep apps unlocked for 1 minute of inactivity before requiring the passcode/biometric again."
+        titleRes = R.string.lock_timer_1_minute_title,
+        descriptionRes = R.string.lock_timer_1_minute_description
     ),
     LockTimerOption(
         durationMillis = 120_000L,
-        title = "After 2 minutes",
-        description = "Keep apps unlocked for 2 minutes of inactivity before requiring the passcode/biometric again."
+        titleRes = R.string.lock_timer_2_minutes_title,
+        descriptionRes = R.string.lock_timer_2_minutes_description
     ),
     LockTimerOption(
         durationMillis = 300_000L,
-        title = "After 5 minutes",
-        description = "Keep apps unlocked for 5 minutes of inactivity before requiring the passcode/biometric again."
+        titleRes = R.string.lock_timer_5_minutes_title,
+        descriptionRes = R.string.lock_timer_5_minutes_description
     ),
     LockTimerOption(
         durationMillis = 600_000L,
-        title = "After 10 minutes",
-        description = "Keep apps unlocked for 10 minutes of inactivity before requiring the passcode/biometric again."
+        titleRes = R.string.lock_timer_10_minutes_title,
+        descriptionRes = R.string.lock_timer_10_minutes_description
     )
 )
 
@@ -354,6 +360,12 @@ fun SettingsScreen(
     val selectedTimerOption = remember(selectedTimerMillis) {
         timerOptions.firstOrNull { it.durationMillis == selectedTimerMillis } ?: timerOptions.first()
     }
+    var languageExpanded by remember { mutableStateOf(false) }
+    var selectedLanguageTag by remember { mutableStateOf(Prefs.getLanguageCode(ctx)) }
+    val languageOptions = remember { LocaleManager.supportedLanguages }
+    val selectedLanguageOption = remember(selectedLanguageTag) {
+        LocaleManager.findOption(selectedLanguageTag)
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -365,12 +377,12 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp) // spacing between items
     ) {
         // --- Security
-        item { Text("Security", style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item { Text(stringResource(R.string.settings_section_security), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
         item { ChangePasswordRow() }
         item {
             ListItem(
                 leadingContent = { Icon(Icons.Outlined.Fingerprint, null, tint = cs.onBackground) },
-                headlineContent = { Text("Use fingerprint", color = cs.onBackground) },
+                headlineContent = { Text(stringResource(R.string.use_fingerprint), color = cs.onBackground) },
                 trailingContent = {
                     Switch(
                         checked = useBiometric,
@@ -394,11 +406,11 @@ fun SettingsScreen(
         item { HorizontalDivider(color = cs.outlineVariant) }
 
         // --- Lock timers
-        item { Text("Lock Timers", style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item { Text(stringResource(R.string.settings_section_lock_timers), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
         item {
             ExposedDropdownMenuBox(expanded = timerExpanded, onExpandedChange = { timerExpanded = it }) {
                 OutlinedTextField(
-                    value = selectedTimerOption.title,
+                    value = stringResource(selectedTimerOption.titleRes),
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timerExpanded) },
@@ -412,12 +424,12 @@ fun SettingsScreen(
                         disabledIndicatorColor = Color.Transparent
                     ),
                     singleLine = true,
-                    label = { Text("Select Timers") }
+                    label = { Text(stringResource(R.string.settings_select_timer)) }
                 )
                 ExposedDropdownMenu(expanded = timerExpanded, onDismissRequest = { timerExpanded = false }) {
                     timerOptions.forEach { option ->
                         DropdownMenuItem(
-                            text = { Text(option.title) },
+                            text = { Text(stringResource(option.titleRes)) },
                             onClick = {
                                 timerExpanded = false
                                 selectedTimerMillis = option.durationMillis
@@ -431,7 +443,7 @@ fun SettingsScreen(
         }
         item {
             Text(
-                text = selectedTimerOption.description,
+                text = stringResource(selectedTimerOption.descriptionRes),
                 color = cs.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -439,9 +451,9 @@ fun SettingsScreen(
         item {
             ListItem(
                 leadingContent = { Icon(Icons.Outlined.ScreenLockRotation, null, tint = cs.onBackground) },
-                headlineContent = { Text("Lock immediately when screen turns off", color = cs.onBackground) },
+                headlineContent = { Text(stringResource(R.string.lock_screen_off_title), color = cs.onBackground) },
                 supportingContent = {
-                    Text("If enabled, the app locks when the display sleeps even if a timer is set.", color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.lock_screen_off_description), color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 },
                 trailingContent = {
                     Switch(
@@ -466,34 +478,72 @@ fun SettingsScreen(
 
         item { HorizontalDivider(color = cs.outlineVariant) }
 
+        // --- Language
+        item { Text(stringResource(R.string.settings_section_language), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item {
+            val languageLabel = stringResource(selectedLanguageOption.labelRes)
+            ExposedDropdownMenuBox(expanded = languageExpanded, onExpandedChange = { languageExpanded = it }) {
+                OutlinedTextField(
+                    value = languageLabel,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = cs.surface,
+                        unfocusedContainerColor = cs.surface,
+                        disabledContainerColor = cs.surface,
+                        focusedIndicatorColor = cs.primary,
+                        unfocusedIndicatorColor = cs.outline,
+                        disabledIndicatorColor = Color.Transparent
+                    ),
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.app_language_label)) }
+                )
+                ExposedDropdownMenu(expanded = languageExpanded, onDismissRequest = { languageExpanded = false }) {
+                    languageOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(option.labelRes)) },
+                            onClick = {
+                                languageExpanded = false
+                                selectedLanguageTag = option.tag
+                                LocaleManager.setAppLanguage(ctx, option.tag)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        item { HorizontalDivider(color = cs.outlineVariant) }
+
         // --- Theme
-        item { Text("Theme", style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item { Text(stringResource(R.string.settings_section_theme), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
         item {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(selected = themeMode == ThemeMode.SYSTEM, onClick = { onThemeChange(ThemeMode.SYSTEM) })
-                    Text("System", color = cs.onBackground)
+                    Text(stringResource(R.string.theme_system), color = cs.onBackground)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(selected = themeMode == ThemeMode.LIGHT, onClick = { onThemeChange(ThemeMode.LIGHT) })
-                    Text("Light", color = cs.onBackground)
+                    Text(stringResource(R.string.theme_light), color = cs.onBackground)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(selected = themeMode == ThemeMode.DARK, onClick = { onThemeChange(ThemeMode.DARK) })
-                    Text("Dark", color = cs.onBackground)
+                    Text(stringResource(R.string.theme_dark), color = cs.onBackground)
                 }
             }
         }
         item { HorizontalDivider(color = cs.outlineVariant) }
 
         // --- About
-        item { Text("About", style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item { Text(stringResource(R.string.settings_section_about), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
         item {
             ElevatedCard(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    LabeledValue(label = "App version", value = getAppVersion(ctx))
+                    LabeledValue(label = stringResource(R.string.about_app_version_label), value = getAppVersion(ctx))
                     HorizontalDivider(color = cs.outlineVariant)
-                    LabeledValue(label = "Developer", value = "Adam Ali")
+                    LabeledValue(label = stringResource(R.string.about_developer_label), value = stringResource(R.string.developer_name))
                 }
             }
         }
@@ -512,9 +562,9 @@ data class AppListUiState(
     val apps: List<AppEntry> = emptyList()
 )
 
-private enum class AppSelectionSegment(val label: String) {
-    Unlocked("Unlocked"),
-    Locked("Locked")
+private enum class AppSelectionSegment(@StringRes val labelRes: Int) {
+    Unlocked(R.string.segment_unlocked),
+    Locked(R.string.segment_locked)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -549,16 +599,11 @@ private fun AppSelectionScreen(
 
     val hasAnyApps = uiState.apps.isNotEmpty()
     val emptyStateMessage = remember(selectedSegment, searchQuery, hasAnyApps) {
-        if (!hasAnyApps) {
-            "No launchable apps found"
-        } else if (searchQuery.isBlank()) {
-            if (selectedSegment == AppSelectionSegment.Locked) {
-                "No locked apps yet"
-            } else {
-                "All of your apps are currently locked"
-            }
-        } else {
-            "No apps match your search"
+        when {
+            !hasAnyApps -> ctx.getString(R.string.no_launchable_apps_found)
+            searchQuery.isBlank() && selectedSegment == AppSelectionSegment.Locked -> ctx.getString(R.string.no_locked_apps_yet)
+            searchQuery.isBlank() -> ctx.getString(R.string.all_apps_locked)
+            else -> ctx.getString(R.string.no_apps_match_search)
         }
     }
 
@@ -572,7 +617,7 @@ private fun AppSelectionScreen(
                     selected = selectedSegment == segment,
                     onClick = { selectedSegment = segment },
                     shape = SegmentedButtonDefaults.itemShape(index, segments.size)
-                ) { Text(segment.label) }
+                ) { Text(stringResource(segment.labelRes)) }
             }
         }
     }
@@ -610,7 +655,7 @@ private fun AppSelectionScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search apps") },
+                    placeholder = { Text(stringResource(R.string.search_apps)) },
                     leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -806,17 +851,22 @@ private fun ChangePasswordRow() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    val changePasscodeLabel = stringResource(R.string.change_passcode_title)
+    val changePasscodeMessage = if (isSet) {
+        stringResource(R.string.update_master_passcode)
+    } else {
+        stringResource(R.string.set_master_passcode)
+    }
+
     ListItem(
-        headlineContent = { Text("Change passcode") }, // or "Change password" if you kept text
-        supportingContent = {
-            Text(if (isSet) "Update your master passcode" else "Set a master passcode")
-        },
+        headlineContent = { Text(changePasscodeLabel) },
+        supportingContent = { Text(changePasscodeMessage) },
         leadingContent = { Icon(Icons.Outlined.Lock, contentDescription = null) }, // use Lock for widest compatibility
         trailingContent = { Icon(Icons.Outlined.ChevronRight, contentDescription = null) },
         modifier = Modifier
             .fillMaxWidth()
             .clickable { showDialog = true }
-            .semantics { contentDescription = "Change passcode" }
+            .semantics { contentDescription = changePasscodeLabel }
     )
 
     if (showDialog) {
@@ -829,19 +879,19 @@ private fun ChangePasswordRow() {
                 val newStr = new.joinToString("")
                 when {
                     newStr.length !in minDigits..maxDigits ->
-                        Toast.makeText(context, "Passcode must be $minDigits–$maxDigits digits", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.passcode_length_error_range, minDigits, maxDigits), Toast.LENGTH_SHORT).show()
                     !newStr.all { it.isDigit() } ->
-                        Toast.makeText(context, "Digits only", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.passcode_digits_only_error), Toast.LENGTH_SHORT).show()
                     !new.contentEquals(confirm) ->
-                        Toast.makeText(context, "Passcodes do not match", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.passcode_mismatch_error), Toast.LENGTH_SHORT).show()
                     else -> {
                         val ok = repo.changePassword(current, new)
                         if (ok) {
                             isSet = true           // <- update UI state immediately
-                            Toast.makeText(context, "Passcode updated", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.passcode_updated_message), Toast.LENGTH_SHORT).show()
                             showDialog = false
                         } else {
-                            Toast.makeText(context, "Current passcode incorrect", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.current_passcode_incorrect_message), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -870,11 +920,11 @@ private fun ChangePasswordDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (isExisting) "Change passcode" else "Set passcode") },
+        title = { Text(stringResource(if (isExisting) R.string.change_passcode_title else R.string.set_passcode_title)) },
         text = {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (isExisting) PasscodeField(
-                    label = "Current passcode",
+                    labelRes = R.string.current_passcode_label,
                     value = current,
                     onValueChange = { current = it },
                     visible = showCurrent,
@@ -884,7 +934,7 @@ private fun ChangePasswordDialog(
                 )
 
                 PasscodeField(
-                    label = "New passcode",
+                    labelRes = R.string.new_passcode_label,
                     value = newPw,
                     onValueChange = { newPw = it },
                     visible = showNew,
@@ -894,7 +944,7 @@ private fun ChangePasswordDialog(
                 )
 
                 PasscodeField(
-                    label = "Confirm new passcode",
+                    labelRes = R.string.confirm_new_passcode_label,
                     value = confirmPw,
                     onValueChange = { confirmPw = it },
                     visible = showConfirm,
@@ -908,13 +958,13 @@ private fun ChangePasswordDialog(
             TextButton(onClick = {
                 onConfirm(if (isExisting) current else null, newPw, confirmPw)
                 current.fill('\u0000'); newPw.fill('\u0000'); confirmPw.fill('\u0000')
-            }) { Text("Save") }
+            }) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
             TextButton(onClick = {
                 onDismiss()
                 current.fill('\u0000'); newPw.fill('\u0000'); confirmPw.fill('\u0000')
-            }) { Text("Cancel") }
+            }) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }
@@ -924,7 +974,7 @@ private fun ChangePasswordDialog(
 
 @Composable
 private fun PasscodeField(
-    label: String,
+    @StringRes labelRes: Int,
     value: CharArray,
     onValueChange: (CharArray) -> Unit,
     visible: Boolean,
@@ -933,6 +983,7 @@ private fun PasscodeField(
     maxLength: Int = 6,
 ) {
     var text by remember(value) { mutableStateOf(String(value)) }
+    val label = stringResource(labelRes)
     OutlinedTextField(
         value = text,
         onValueChange = { raw ->
@@ -951,7 +1002,7 @@ private fun PasscodeField(
         ),
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
-            val iconLabel = if (visible) "Hide" else "Show"
+            val iconLabel = if (visible) stringResource(R.string.passcode_visibility_hide) else stringResource(R.string.passcode_visibility_show)
             TextButton(onClick = onToggleVisibility) { Text(iconLabel) }
         },
         modifier = Modifier.fillMaxWidth()
