@@ -66,7 +66,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlin.math.roundToInt
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.annotation.StringRes
 import androidx.core.graphics.createBitmap
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -78,7 +78,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         LocaleManager.applyStoredLocale(this)

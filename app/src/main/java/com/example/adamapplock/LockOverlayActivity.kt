@@ -30,7 +30,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
-import androidx.fragment.app.FragmentActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.example.adamapplock.ui.theme.AdamAppLockTheme
 import androidx.compose.material3.*
 import androidx.compose.ui.text.input.ImeAction
@@ -38,7 +38,7 @@ import androidx.compose.ui.text.input.ImeAction
 
 const val EXTRA_LOCKED_PKG = "locked_pkg"
 
-class LockOverlayActivity : FragmentActivity() {
+class LockOverlayActivity : AppCompatActivity() {
 
     private var lockedPkg: String? = null
 
