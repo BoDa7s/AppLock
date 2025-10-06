@@ -1,0 +1,94 @@
+<resources>
+    <string name="app_name">AdamAppLock</string>
+
+    <!-- Tabs -->
+    <string name="tab_main">मुख्य</string>
+    <string name="tab_settings">सेटिंग्स</string>
+
+    <!-- Passcode setup -->
+    <string name="passcode_setup_title">पासकोड सेट करें</string>
+    <string name="passcode_enter_label">पासकोड दर्ज करें</string>
+    <string name="passcode_confirm_label">पासकोड की पुष्टि करें</string>
+    <string name="passcode_length_error_range">पासकोड %1$d से %2$d अंकों का होना चाहिए</string>
+    <string name="passcode_mismatch_error">पासकोड मेल नहीं खाते</string>
+    <string name="passcode_digits_only_error">केवल अंक</string>
+    <string name="passcode_updated_message">पासकोड अपडेट किया गया</string>
+    <string name="current_passcode_incorrect_message">वर्तमान पासकोड गलत है</string>
+    <string name="passcode_empty_error">अपना पासकोड दर्ज करें</string>
+    <string name="passcode_wrong_error">गलत पासकोड</string>
+
+    <!-- Common actions -->
+    <string name="action_save">सहेजें</string>
+    <string name="action_cancel">रद्द करें</string>
+    <string name="unlock_action">अनलॉक करें</string>
+
+    <!-- Settings sections -->
+    <string name="settings_section_security">सुरक्षा</string>
+    <string name="settings_section_lock_timers">लॉक टाइमर</string>
+    <string name="settings_section_language">ऐप भाषा</string>
+    <string name="settings_section_theme">थीम</string>
+    <string name="settings_section_about">परिचय</string>
+
+    <!-- Settings content -->
+    <string name="use_fingerprint">फ़िंगरप्रिंट उपयोग करें</string>
+    <string name="settings_select_timer">टाइमर चुनें</string>
+    <string name="lock_screen_off_title">स्क्रीन बंद होते ही तुरंत लॉक करें</string>
+    <string name="lock_screen_off_description">सक्रिय होने पर, स्क्रीन बंद होते ही ऐप लॉक हो जाएगा भले ही टाइमर सेट हो.</string>
+    <string name="app_language_label">ऐप भाषा</string>
+    <string name="language_system_default">डिवाइस की भाषा उपयोग करें</string>
+    <string name="language_english">अंग्रेज़ी</string>
+    <string name="language_arabic">अरबी</string>
+    <string name="language_spanish">स्पेनिश</string>
+    <string name="language_french">फ़्रेंच</string>
+    <string name="language_hindi">हिंदी</string>
+    <string name="theme_system">सिस्टम</string>
+    <string name="theme_light">हल्का</string>
+    <string name="theme_dark">गहरा</string>
+    <string name="about_app_version_label">ऐप संस्करण</string>
+    <string name="about_developer_label">डेवलपर</string>
+    <string name="developer_name">आदम अली</string>
+
+    <!-- Lock timer descriptions -->
+    <string name="lock_timer_immediate_title">तुरंत लॉक करें</string>
+    <string name="lock_timer_immediate_description">हर बार ऐप बंद करने या स्क्रीन बंद होने पर अनलॉक करना आवश्यक होगा.</string>
+    <string name="lock_timer_30_seconds_title">30 सेकंड बाद</string>
+    <string name="lock_timer_30_seconds_description">30 सेकंड की निष्क्रियता तक ऐप अनलॉक रहता है, फिर पासकोड या बायोमेट्रिक की आवश्यकता होती है.</string>
+    <string name="lock_timer_1_minute_title">1 मिनट बाद</string>
+    <string name="lock_timer_1_minute_description">1 मिनट की निष्क्रियता तक ऐप अनलॉक रहता है, फिर पासकोड या बायोमेट्रिक की आवश्यकता होती है.</string>
+    <string name="lock_timer_2_minutes_title">2 मिनट बाद</string>
+    <string name="lock_timer_2_minutes_description">2 मिनट की निष्क्रियता तक ऐप अनलॉक रहता है, फिर पासकोड या बायोमेट्रिक की आवश्यकता होती है.</string>
+    <string name="lock_timer_5_minutes_title">5 मिनट बाद</string>
+    <string name="lock_timer_5_minutes_description">5 मिनट की निष्क्रियता तक ऐप अनलॉक रहता है, फिर पासकोड या बायोमेट्रिक की आवश्यकता होती है.</string>
+    <string name="lock_timer_10_minutes_title">10 मिनट बाद</string>
+    <string name="lock_timer_10_minutes_description">10 मिनट की निष्क्रियता तक ऐप अनलॉक रहता है, फिर पासकोड या बायोमेट्रिक की आवश्यकता होती है.</string>
+
+    <!-- App selection -->
+    <string name="segment_unlocked">अनलॉक</string>
+    <string name="segment_locked">लॉक</string>
+    <string name="no_launchable_apps_found">कोई लॉन्च करने योग्य ऐप नहीं मिला</string>
+    <string name="no_locked_apps_yet">अभी तक कोई ऐप लॉक नहीं है</string>
+    <string name="all_apps_locked">आपके सभी ऐप वर्तमान में लॉक हैं</string>
+    <string name="no_apps_match_search">आपकी खोज से कोई ऐप मेल नहीं खाता</string>
+    <string name="search_apps">ऐप खोजें</string>
+
+    <!-- Change passcode -->
+    <string name="change_passcode_title">पासकोड बदलें</string>
+    <string name="set_passcode_title">पासकोड सेट करें</string>
+    <string name="update_master_passcode">अपना मुख्य पासकोड अपडेट करें</string>
+    <string name="set_master_passcode">मुख्य पासकोड सेट करें</string>
+    <string name="current_passcode_label">वर्तमान पासकोड</string>
+    <string name="new_passcode_label">नया पासकोड</string>
+    <string name="confirm_new_passcode_label">नए पासकोड की पुष्टि करें</string>
+    <string name="passcode_visibility_show">दिखाएँ</string>
+    <string name="passcode_visibility_hide">छिपाएँ</string>
+
+    <!-- Lock screen -->
+    <string name="app_locked_title">ऐप लॉक है</string>
+    <string name="lock_screen_passcode_label">पासकोड</string>
+    <string name="biometric_prompt_title">अनलॉक करें</string>
+    <string name="biometric_prompt_subtitle">अनलॉक करने के लिए फ़िंगरप्रिंट उपयोग करें</string>
+    <string name="biometric_prompt_use_passcode">पासकोड उपयोग करें</string>
+
+    <!-- Misc -->
+    <string name="version_unknown">अज्ञात</string>
+</resources>

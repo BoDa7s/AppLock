@@ -1,0 +1,94 @@
+<resources>
+    <string name="app_name">AdamAppLock</string>
+
+    <!-- Tabs -->
+    <string name="tab_main">Inicio</string>
+    <string name="tab_settings">Configuración</string>
+
+    <!-- Passcode setup -->
+    <string name="passcode_setup_title">Configurar un código</string>
+    <string name="passcode_enter_label">Introduce el código</string>
+    <string name="passcode_confirm_label">Confirma el código</string>
+    <string name="passcode_length_error_range">El código debe tener entre %1$d y %2$d dígitos</string>
+    <string name="passcode_mismatch_error">Los códigos no coinciden</string>
+    <string name="passcode_digits_only_error">Solo números</string>
+    <string name="passcode_updated_message">Código actualizado</string>
+    <string name="current_passcode_incorrect_message">El código actual es incorrecto</string>
+    <string name="passcode_empty_error">Introduce tu código</string>
+    <string name="passcode_wrong_error">Código incorrecto</string>
+
+    <!-- Common actions -->
+    <string name="action_save">Guardar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="unlock_action">Desbloquear</string>
+
+    <!-- Settings sections -->
+    <string name="settings_section_security">Seguridad</string>
+    <string name="settings_section_lock_timers">Temporizadores de bloqueo</string>
+    <string name="settings_section_language">Idioma de la aplicación</string>
+    <string name="settings_section_theme">Tema</string>
+    <string name="settings_section_about">Acerca de</string>
+
+    <!-- Settings content -->
+    <string name="use_fingerprint">Usar huella digital</string>
+    <string name="settings_select_timer">Selecciona un temporizador</string>
+    <string name="lock_screen_off_title">Bloquear inmediatamente al apagar la pantalla</string>
+    <string name="lock_screen_off_description">Si se activa, la aplicación se bloqueará cuando la pantalla se apague aunque haya un temporizador.</string>
+    <string name="app_language_label">Idioma de la aplicación</string>
+    <string name="language_system_default">Usar idioma del dispositivo</string>
+    <string name="language_english">Inglés</string>
+    <string name="language_arabic">Árabe</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_french">Francés</string>
+    <string name="language_hindi">Hindi</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="about_app_version_label">Versión de la aplicación</string>
+    <string name="about_developer_label">Desarrollador</string>
+    <string name="developer_name">Adam Ali</string>
+
+    <!-- Lock timer descriptions -->
+    <string name="lock_timer_immediate_title">Bloquear inmediatamente</string>
+    <string name="lock_timer_immediate_description">Requiere desbloquear cada vez que cierres la aplicación o se apague la pantalla.</string>
+    <string name="lock_timer_30_seconds_title">Después de 30 segundos</string>
+    <string name="lock_timer_30_seconds_description">Mantiene las aplicaciones desbloqueadas durante 30 segundos de inactividad antes de volver a pedir el código o la biometría.</string>
+    <string name="lock_timer_1_minute_title">Después de 1 minuto</string>
+    <string name="lock_timer_1_minute_description">Mantiene las aplicaciones desbloqueadas durante 1 minuto de inactividad antes de volver a pedir el código o la biometría.</string>
+    <string name="lock_timer_2_minutes_title">Después de 2 minutos</string>
+    <string name="lock_timer_2_minutes_description">Mantiene las aplicaciones desbloqueadas durante 2 minutos de inactividad antes de volver a pedir el código o la biometría.</string>
+    <string name="lock_timer_5_minutes_title">Después de 5 minutos</string>
+    <string name="lock_timer_5_minutes_description">Mantiene las aplicaciones desbloqueadas durante 5 minutos de inactividad antes de volver a pedir el código o la biometría.</string>
+    <string name="lock_timer_10_minutes_title">Después de 10 minutos</string>
+    <string name="lock_timer_10_minutes_description">Mantiene las aplicaciones desbloqueadas durante 10 minutos de inactividad antes de volver a pedir el código o la biometría.</string>
+
+    <!-- App selection -->
+    <string name="segment_unlocked">Desbloqueadas</string>
+    <string name="segment_locked">Bloqueadas</string>
+    <string name="no_launchable_apps_found">No se encontraron aplicaciones ejecutables</string>
+    <string name="no_locked_apps_yet">Todavía no hay aplicaciones bloqueadas</string>
+    <string name="all_apps_locked">Todas tus aplicaciones están bloqueadas</string>
+    <string name="no_apps_match_search">Ninguna aplicación coincide con tu búsqueda</string>
+    <string name="search_apps">Buscar aplicaciones</string>
+
+    <!-- Change passcode -->
+    <string name="change_passcode_title">Cambiar código</string>
+    <string name="set_passcode_title">Configurar código</string>
+    <string name="update_master_passcode">Actualiza tu código maestro</string>
+    <string name="set_master_passcode">Configura un código maestro</string>
+    <string name="current_passcode_label">Código actual</string>
+    <string name="new_passcode_label">Nuevo código</string>
+    <string name="confirm_new_passcode_label">Confirma el nuevo código</string>
+    <string name="passcode_visibility_show">Mostrar</string>
+    <string name="passcode_visibility_hide">Ocultar</string>
+
+    <!-- Lock screen -->
+    <string name="app_locked_title">Aplicación bloqueada</string>
+    <string name="lock_screen_passcode_label">Código</string>
+    <string name="biometric_prompt_title">Desbloquear</string>
+    <string name="biometric_prompt_subtitle">Usa la huella digital para desbloquear</string>
+    <string name="biometric_prompt_use_passcode">Usar código</string>
+
+    <!-- Misc -->
+    <string name="version_unknown">Desconocido</string>
+</resources>

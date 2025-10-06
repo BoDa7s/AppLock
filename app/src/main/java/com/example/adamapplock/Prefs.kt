@@ -24,6 +24,7 @@ object Prefs {
     private const val KEY_LOCK_ON_SCREEN_OFF = "lock_on_screen_off"
 
     private const val KEY_THEME_MODE = "theme_mode"
+    private const val KEY_LANGUAGE = "app_language"
 
     private fun prefs(ctx: Context) =
         ctx.getSharedPreferences("lock_prefs", Context.MODE_PRIVATE)
@@ -42,6 +43,19 @@ object Prefs {
             ThemeMode.DARK   -> "dark"
         }
         prefs(ctx).edit().putString(KEY_THEME_MODE, value).apply()
+    }
+
+    fun getLanguageCode(ctx: Context): String? =
+        prefs(ctx).getString(KEY_LANGUAGE, null)
+
+    fun setLanguageCode(ctx: Context, languageTag: String?) {
+        prefs(ctx).edit().apply {
+            if (languageTag.isNullOrBlank()) {
+                remove(KEY_LANGUAGE)
+            } else {
+                putString(KEY_LANGUAGE, languageTag)
+            }
+        }.apply()
     }
 
     private fun sp(ctx: Context) =
