@@ -26,17 +26,17 @@
     <!-- Settings sections -->
     <string name="settings_section_security">Sécurité</string>
     <string name="settings_section_lock_timers">Minuteries de verrouillage</string>
-    <string name="settings_section_language">Langue de l’application</string>
+    <string name="settings_section_language">Langue de l\'application</string>
     <string name="settings_section_theme">Thème</string>
     <string name="settings_section_about">À propos</string>
 
     <!-- Settings content -->
-    <string name="use_fingerprint">Utiliser l’empreinte digitale</string>
+    <string name="use_fingerprint">Utiliser l\'empreinte digitale</string>
     <string name="settings_select_timer">Sélectionnez une minuterie</string>
-    <string name="lock_screen_off_title">Verrouiller immédiatement lorsque l’écran s’éteint</string>
-    <string name="lock_screen_off_description">Si activé, l’application se verrouille lorsque l’écran s’éteint même si une minuterie est définie.</string>
-    <string name="app_language_label">Langue de l’application</string>
-    <string name="language_system_default">Utiliser la langue de l’appareil</string>
+    <string name="lock_screen_off_title">Verrouiller immédiatement lorsque l\'écran s\'éteint</string>
+    <string name="lock_screen_off_description">Si activé, l\'application se verrouille lorsque l\'écran s\'éteint même si une minuterie est définie.</string>
+    <string name="app_language_label">Langue de l\'application</string>
+    <string name="language_system_default">Utiliser la langue de l\'appareil</string>
     <string name="language_english">Anglais</string>
     <string name="language_arabic">Arabe</string>
     <string name="language_spanish">Espagnol</string>
@@ -45,23 +45,23 @@
     <string name="theme_system">Système</string>
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>
-    <string name="about_app_version_label">Version de l’application</string>
+    <string name="about_app_version_label">Version de l\'application</string>
     <string name="about_developer_label">Développeur</string>
     <string name="developer_name">Adam Ali</string>
 
     <!-- Lock timer descriptions -->
     <string name="lock_timer_immediate_title">Verrouiller immédiatement</string>
-    <string name="lock_timer_immediate_description">Requiert un déverrouillage chaque fois que vous fermez l’application ou que l’écran s’éteint.</string>
+    <string name="lock_timer_immediate_description">Requiert un déverrouillage chaque fois que vous fermez l\'application ou que l\'écran s\'éteint.</string>
     <string name="lock_timer_30_seconds_title">Après 30 secondes</string>
-    <string name="lock_timer_30_seconds_description">Maintient les applications déverrouillées pendant 30 secondes d’inactivité avant d’exiger à nouveau le code ou la biométrie.</string>
+    <string name="lock_timer_30_seconds_description">Maintient les applications déverrouillées pendant 30 secondes d\'inactivité avant d\'exiger à nouveau le code ou la biométrie.</string>
     <string name="lock_timer_1_minute_title">Après 1 minute</string>
-    <string name="lock_timer_1_minute_description">Maintient les applications déverrouillées pendant 1 minute d’inactivité avant d’exiger à nouveau le code ou la biométrie.</string>
+    <string name="lock_timer_1_minute_description">Maintient les applications déverrouillées pendant 1 minute d\'inactivité avant d\'exiger à nouveau le code ou la biométrie.</string>
     <string name="lock_timer_2_minutes_title">Après 2 minutes</string>
-    <string name="lock_timer_2_minutes_description">Maintient les applications déverrouillées pendant 2 minutes d’inactivité avant d’exiger à nouveau le code ou la biométrie.</string>
+    <string name="lock_timer_2_minutes_description">Maintient les applications déverrouillées pendant 2 minutes d\'inactivité avant d\'exiger à nouveau le code ou la biométrie.</string>
     <string name="lock_timer_5_minutes_title">Après 5 minutes</string>
-    <string name="lock_timer_5_minutes_description">Maintient les applications déverrouillées pendant 5 minutes d’inactivité avant d’exiger à nouveau le code ou la biométrie.</string>
+    <string name="lock_timer_5_minutes_description">Maintient les applications déverrouillées pendant 5 minutes d\'inactivité avant d\'exiger à nouveau le code ou la biométrie.</string>
     <string name="lock_timer_10_minutes_title">Après 10 minutes</string>
-    <string name="lock_timer_10_minutes_description">Maintient les applications déverrouillées pendant 10 minutes d’inactivité avant d’exiger à nouveau le code ou la biométrie.</string>
+    <string name="lock_timer_10_minutes_description">Maintient les applications déverrouillées pendant 10 minutes d\'inactivité avant d\'exiger à nouveau le code ou la biométrie.</string>
 
     <!-- App selection -->
     <string name="segment_unlocked">Déverrouillées</string>
@@ -87,7 +87,7 @@
     <string name="app_locked_title">Application verrouillée</string>
     <string name="lock_screen_passcode_label">Code</string>
     <string name="biometric_prompt_title">Déverrouiller</string>
-    <string name="biometric_prompt_subtitle">Utilisez l’empreinte digitale pour déverrouiller</string>
+    <string name="biometric_prompt_subtitle">Utilisez l\'empreinte digitale pour déverrouiller</string>
     <string name="biometric_prompt_use_passcode">Utiliser le code</string>
 
     <!-- Misc -->
