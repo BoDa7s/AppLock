@@ -10,10 +10,10 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -230,14 +230,13 @@ private fun LockScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(stringResource(R.string.app_locked_title), color = cs.background, style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(16.dp))
-
         Text(
             stringResource(R.string.app_locked_title),
-            color = MaterialTheme.colorScheme.onBackground,
+            color = cs.onBackground,
             style = MaterialTheme.typography.titleLarge
         )
+
+        Spacer(Modifier.height(16.dp))
 
         OutlinedTextField( // or TextField — either is fine
             value = passcode,
@@ -251,6 +250,13 @@ private fun LockScreen(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ), // NumberPassword if available in your version
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    focusManager.clearFocus(force = true)
+                    keyboardController?.hide()
+                    onUnlock(passcode)
+                }
+            ),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
