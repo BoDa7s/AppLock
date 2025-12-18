@@ -8,6 +8,13 @@ import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewTreeLifecycleOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.ViewTreeSavedStateRegistryOwner
 import com.example.adamapplock.Prefs
 import com.example.adamapplock.PermissionUtils
 import com.example.adamapplock.lock.LockScreen
@@ -31,6 +38,7 @@ class OverlayLocker(context: Context) {
     private var overlayView: ComposeView? = null
     private var lockedPackage: String? = null
     private var lastOverlayActionAt = 0L
+    private var overlayLifecycleOwner: OverlayLifecycleOwner? = null
 
     fun showLockedApp(
         pkg: String,
@@ -58,7 +66,10 @@ class OverlayLocker(context: Context) {
             dismiss()
 
             lockedPackage = pkg
+            val lifecycleOwner = OverlayLifecycleOwner().apply { markResumed() }
             val view = ComposeView(appContext).apply {
+                ViewTreeLifecycleOwner.set(this, lifecycleOwner)
+                ViewTreeSavedStateRegistryOwner.set(this, lifecycleOwner)
                 setContent {
                     AdamAppLockTheme(themeMode = Prefs.getThemeMode(appContext)) {
                         LockScreen(
@@ -90,11 +101,13 @@ class OverlayLocker(context: Context) {
             runCatching { windowManager.addView(view, params) }
                 .onSuccess {
                     overlayView = view
+                    overlayLifecycleOwner = lifecycleOwner
                     Log.i(TAG, "overlay_added pkg=$pkg")
                 }
                 .onFailure { err ->
                     Log.e(TAG, "overlay_add_failed pkg=$pkg", err)
                     lockedPackage = null
+                    lifecycleOwner.destroy()
                 }
         }
         return true
@@ -110,9 +123,34 @@ class OverlayLocker(context: Context) {
                 runCatching { windowManager.removeViewImmediate(it) }
                     .onFailure { err -> Log.e(TAG, "overlay_remove_failed", err) }
             }
+            overlayLifecycleOwner?.destroy()
             overlayView = null
             lockedPackage = null
+            overlayLifecycleOwner = null
             reason?.let { Log.i(TAG, "overlay_dismissed reason=$it") }
         }
+    }
+}
+
+private class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner {
+    private val lifecycleRegistry = LifecycleRegistry(this)
+    private val savedStateController = SavedStateRegistryController.create(this).apply {
+        performRestore(null)
+    }
+
+    override val lifecycle: Lifecycle
+        get() = lifecycleRegistry
+
+    override val savedStateRegistry: SavedStateRegistry
+        get() = savedStateController.savedStateRegistry
+
+    fun markResumed() {
+        lifecycleRegistry.currentState = Lifecycle.State.CREATED
+        lifecycleRegistry.currentState = Lifecycle.State.STARTED
+        lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+    }
+
+    fun destroy() {
+        lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
     }
 }
