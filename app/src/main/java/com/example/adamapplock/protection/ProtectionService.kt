@@ -10,14 +10,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.example.adamapplock.PermissionUtils
 import com.example.adamapplock.Prefs
 import com.example.adamapplock.R
 import com.example.adamapplock.SessionTimeoutScheduler
@@ -29,12 +27,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.currentCoroutineContext
 
 class ProtectionService : Service() {
 
-    private companion object {
-        private const val TAG = "ProtectionService"
-    }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var monitorJob: Job? = null
@@ -97,7 +93,7 @@ class ProtectionService : Service() {
     private suspend fun monitorLoop() {
         val passwordRepo = PasswordRepository.get(this)
 
-        while (isActive) {
+        while (currentCoroutineContext().isActive) {
             val permissions = PermissionSnapshot.capture(this)
             if (permissions != lastPermissions) {
                 lastPermissions = permissions
@@ -300,6 +296,7 @@ class ProtectionService : Service() {
     }
 
     companion object {
+        private const val TAG = "ProtectionService"
         private const val NOTIFICATION_ID = 1001
         private const val NOTIFICATION_CHANNEL = "app_lock_protection"
 
