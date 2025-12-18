@@ -106,7 +106,9 @@ class ProtectionService : Service() {
             val delayMs = if (interactive) 650L else 1800L
 
             if (!hasOverlay || !hasUsage) {
-                overlayLocker.dismiss("permissions_missing")
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    overlayLocker.dismiss("permissions_missing")
+                }
                 if (lastLockedPkg != null) {
                     Log.w(TAG, "Stopping overlay due to missing permission")
                 }
@@ -188,39 +190,50 @@ class ProtectionService : Service() {
                 val label = appInfo?.loadLabel(packageManager)?.toString()
                 val allowBiometric = Prefs.useBiometric(this)
 
-                val requested = overlayLocker.showLockedApp(
-                    pkg = topPkg,
-                    appLabel = label,
-                    useBiometric = allowBiometric,
-                    onUnlock = { passcode ->
-                        val digitsOnly = passcode.filter { it.isDigit() }
-                        if (digitsOnly.isEmpty()) {
-                            Toast.makeText(this, getString(R.string.passcode_empty_error), Toast.LENGTH_SHORT).show()
-                            return@showLockedApp
-                        }
+                // FIX: Switch to Main thread to show UI
+                val requested = kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    overlayLocker.showLockedApp(
+                        pkg = topPkg,
+                        appLabel = label,
+                        useBiometric = allowBiometric,
+                        onUnlock = { passcode ->
+                            // This callback usually runs on Main, but let's be safe with logic
+                            val digitsOnly = passcode.filter { it.isDigit() }
+                            if (digitsOnly.isEmpty()) {
+                                Toast.makeText(this@ProtectionService, getString(R.string.passcode_empty_error), Toast.LENGTH_SHORT).show()
+                                return@showLockedApp
+                            }
 
-                        val chars = digitsOnly.toCharArray()
-                        val ok = passwordRepo.verifyPassword(chars)
-                        java.util.Arrays.fill(chars, '\u0000')
-                        if (ok) {
-                            completeUnlock(topPkg, newUid)
-                        } else {
-                            Toast.makeText(this, getString(R.string.passcode_wrong_error), Toast.LENGTH_SHORT).show()
+                            val chars = digitsOnly.toCharArray()
+                            // verifyPassword might be slow, consider putting it back on Default if it uses heavy hashing
+                            // For now, it's likely fine here for simple PINs.
+                            val ok = passwordRepo.verifyPassword(chars)
+                            java.util.Arrays.fill(chars, '\u0000')
+                            if (ok) {
+                                completeUnlock(topPkg, newUid)
+                            } else {
+                                Toast.makeText(this@ProtectionService, getString(R.string.passcode_wrong_error), Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onBiometric = {
+                            BiometricUnlockActivity.launch(this@ProtectionService) { success ->
+                                if (success) completeUnlock(topPkg, newUid)
+                            }
                         }
-                    },
-                    onBiometric = {
-                        BiometricUnlockActivity.launch(this) { success ->
-                            if (success) completeUnlock(topPkg, newUid)
-                        }
-                    }
-                )
+                    )
+                }
+
                 if (requested) {
                     lastLockedPkg = topPkg
                     Log.i(TAG, "overlay_requested pkg=$topPkg label=$label")
                 }
             } else {
                 if (isRealApp && activeSessionPkg == null) clearUnlockedSession()
-                overlayLocker.dismiss("not_locked")
+
+                // FIX: Switch to Main thread to hide UI
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    overlayLocker.dismiss("not_locked")
+                }
                 lastLockedPkg = null
             }
 

@@ -11,10 +11,11 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.ViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
-import androidx.savedstate.ViewTreeSavedStateRegistryOwner
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.adamapplock.Prefs
 import com.example.adamapplock.PermissionUtils
 import com.example.adamapplock.lock.LockScreen
@@ -68,8 +69,9 @@ class OverlayLocker(context: Context) {
             lockedPackage = pkg
             val lifecycleOwner = OverlayLifecycleOwner().apply { markResumed() }
             val view = ComposeView(appContext).apply {
-                ViewTreeLifecycleOwner.set(this, lifecycleOwner)
-                ViewTreeSavedStateRegistryOwner.set(this, lifecycleOwner)
+                // Attach the lifecycle and saved state owners to the view
+                setViewTreeLifecycleOwner(lifecycleOwner)
+                setViewTreeSavedStateRegistryOwner(lifecycleOwner)
                 setContent {
                     AdamAppLockTheme(themeMode = Prefs.getThemeMode(appContext)) {
                         LockScreen(
