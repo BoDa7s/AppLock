@@ -2,17 +2,17 @@
 
 Explore previous versions, changelogs, and downloadable artifacts on the project's Releases page.
 # AppLock-Android
-AppLock-Android is A Jetpack Compose that turns an Android device into an app locker. The app watches foreground apps with an <code>AccessibilityService</code>, block access with a fullscreen overlay, and gate everything behind a master passcode with optional biometric fallback.
+AppLock-Android is a Jetpack Compose app locker. It monitors foreground apps with usage access, blocks protected apps using an application overlay ("Appear on top"), and gates everything behind a master passcode with optional biometric fallback.
 
 ## Project Stage
 - Internal builds only; no Play Store or GitHub release artifacts are published yet.
 - Targets Android 12 (API 31) and above. The project compiles with SDK 36, targets SDK 34, and uses Kotlin 2.0.21 with the Compose 2024.10.00 BOM.
-- Current focus: finalize fundemintal features, resolve remaining bugs, stabilize accessibility/onboarding UX, and gatherr testing feedback to prepare the app for its first official release.
+- Current focus: finalize fundamental features, stabilize the overlay/onboarding UX, and gather testing feedback to prepare the app for its first official release.
 
 ## Features
 - Compose-driven onboarding that guides users through passcode setup and locked-app selection.
-- <code>AppLockAccessibilityService</code> watches window-state changes and launches a lock screen when a protected package comes to the foreground.
-- Fullscreen <code>LockOverlayActivity</code> prompts for the passcode or triggers fingerprint authentication when enabled.
+- Usage-access powered foreground monitoring watches for locked packages coming to the foreground.
+- An application overlay prompts for the passcode or triggers fingerprint authentication when enabled.
 - Settings surface lets users change the passcode, toggle biometrics authentication, and choose light, dark, or system themes. 
 
 ## Requirements
@@ -26,7 +26,7 @@ Download the latest `AdamAppLock` APK from the [Releases](../../releases) page o
 
 ## Using the App
 1. Launch the app and follow the passcode setup flow.
-2. Enable the **App Lock** accessibility service when redirected to system settings.
+2. Grant **Usage Access** and **Display over other apps** (Appear on top) when redirected to system settings.
 3. From the "Select Apps to Lock" screen, toggle the apps you want to protect.
 4. Optionally open the settings panel to:
    - Change the master passcode.
@@ -37,8 +37,9 @@ Once configured, switching to a locked app triggers the overlay requiring passco
 ## Permissions
 | Permission | Reason |
 |------------|--------|
-| <code>android.permission.POST_NOTIFICATIONS</code> | Warn users when the accessibility service is disabled. |
-| <code>android.permission.BIND_ACCESSIBILITY_SERVICE</code> | Required to observe foreground apps and enforce locks. |
+| <code>android.permission.SYSTEM_ALERT_WINDOW</code> | Required to show the lock overlay above other apps. |
+| <code>android.permission.PACKAGE_USAGE_STATS</code> | Required to read usage events and know which app is in the foreground. |
+| <code>android.permission.POST_NOTIFICATIONS</code> (optional) | Shows protection/alert notifications if enabled. |
 
 ## Project Structure
 
@@ -51,11 +52,10 @@ Once configured, switching to a locked app triggers the overlay requiring passco
         ├─ AndroidManifest.xml
         ├─ java/com/example/adamapplock/
         │ ├─ MainActivity.kt
-        │ ├─ AppLockAccessibilityService.kt
-        │ ├─ LockOverlayActivity.kt
+        │ ├─ protection/ProtectionService.kt
+        │ ├─ protection/OverlayLocker.kt
+        │ ├─ protection/BiometricUnlockActivity.kt
+        │ ├─ lock/LockScreenUi.kt
         │ ├─ Prefs.kt
         │ └─ security/PasswordRepository.kt
         └─ res/
-        ├─ xml/accessibility_service_config.xml
-
-

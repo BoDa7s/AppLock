@@ -22,6 +22,7 @@ object Prefs {
     private const val KEY_SESSION_UID       = "session_unlocked_uid"
     private const val KEY_LOCK_TIMER_MS     = "lock_timer_ms"
     private const val KEY_LOCK_ON_SCREEN_OFF = "lock_on_screen_off"
+    private const val KEY_PROTECTION_ENABLED = "protection_enabled"
 
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_LANGUAGE = "app_language"
@@ -160,6 +161,14 @@ object Prefs {
 
     fun setLockOnScreenOff(ctx: Context, enabled: Boolean) {
         sp(ctx).edit { putBoolean(KEY_LOCK_ON_SCREEN_OFF, enabled) }
+    }
+
+    // -------- Overlay-based protection toggle --------
+    fun isProtectionEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_PROTECTION_ENABLED, false)
+
+    fun setProtectionEnabled(ctx: Context, enabled: Boolean) {
+        sp(ctx).edit { putBoolean(KEY_PROTECTION_ENABLED, enabled) }
     }
 
 

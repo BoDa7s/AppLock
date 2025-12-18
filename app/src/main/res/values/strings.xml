@@ -85,10 +85,26 @@
 
     <!-- Lock screen -->
     <string name="app_locked_title">App Locked</string>
+    <string name="app_locked_subtitle">Unlock %1$s to continue</string>
     <string name="lock_screen_passcode_label">Passcode</string>
     <string name="biometric_prompt_title">Unlock</string>
     <string name="biometric_prompt_subtitle">Use fingerprint to unlock</string>
     <string name="biometric_prompt_use_passcode">Use passcode</string>
+
+    <!-- Permissions & protection -->
+    <string name="permission_overlay_title">Display over other apps</string>
+    <string name="permission_overlay_description">AdamAppLock needs the “Appear on top” permission to show the lock screen over protected apps.</string>
+    <string name="permission_usage_title">Usage access</string>
+    <string name="permission_usage_description">Usage access lets the app know which app is in the foreground so it can lock the ones you pick.</string>
+    <string name="permission_button_open">Open settings</string>
+    <string name="protection_toggle_title">Start protection</string>
+    <string name="protection_toggle_stop">Stop protection</string>
+    <string name="protection_toggle_description">Lock selected apps using appear-on-top overlay and usage access. Requires a persistent notification.</string>
+    <string name="protection_status_running">Protection is active</string>
+    <string name="protection_status_stopped">Protection is off</string>
+    <string name="protection_notification_title">App protection running</string>
+    <string name="protection_notification_body">AdamAppLock is monitoring locked apps.</string>
+    <string name="protection_notification_channel">App Protection</string>
 
     <!-- Misc -->
     <string name="version_unknown">Unknown</string>

@@ -57,6 +57,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -76,6 +77,11 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.surfaceColorAtElevation
+import android.provider.Settings
+import com.example.adamapplock.protection.ProtectionController
+import com.example.adamapplock.protection.ProtectionService
+import com.example.adamapplock.PermissionUtils
 
 
 class MainActivity : AppCompatActivity() {
@@ -567,6 +573,88 @@ private enum class AppSelectionSegment(@StringRes val labelRes: Int) {
     Locked(R.string.segment_locked)
 }
 
+@Composable
+private fun ProtectionCard(
+    overlayGranted: Boolean,
+    usageGranted: Boolean,
+    protectionEnabled: Boolean,
+    onRequestOverlay: () -> Unit,
+    onRequestUsage: () -> Unit,
+    onToggleProtection: (Boolean) -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    val allGranted = overlayGranted && usageGranted
+    val status = if (protectionEnabled && allGranted) {
+        R.string.protection_status_running
+    } else {
+        R.string.protection_status_stopped
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(cs.surface)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(text = stringResource(status), color = cs.onSurface, style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = stringResource(R.string.protection_toggle_description),
+            color = cs.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            PermissionRow(
+                title = stringResource(R.string.permission_overlay_title),
+                description = stringResource(R.string.permission_overlay_description),
+                granted = overlayGranted,
+                onClick = onRequestOverlay
+            )
+            PermissionRow(
+                title = stringResource(R.string.permission_usage_title),
+                description = stringResource(R.string.permission_usage_description),
+                granted = usageGranted,
+                onClick = onRequestUsage
+            )
+        }
+
+        Button(
+            onClick = { onToggleProtection(!protectionEnabled) },
+            enabled = allGranted || protectionEnabled,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val label = if (protectionEnabled) R.string.protection_toggle_stop else R.string.protection_toggle_title
+            Text(text = stringResource(label))
+        }
+    }
+}
+
+@Composable
+private fun PermissionRow(
+    title: String,
+    description: String,
+    granted: Boolean,
+    onClick: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(if (granted) cs.surfaceVariant else cs.surfaceColorAtElevation(4.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(title, color = cs.onSurface, style = MaterialTheme.typography.bodyLarge)
+        Text(description, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        Button(onClick = onClick, enabled = !granted) {
+            Text(stringResource(R.string.permission_button_open))
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppSelectionScreen(
@@ -607,6 +695,34 @@ private fun AppSelectionScreen(
         }
     }
 
+    var overlayGranted by remember { mutableStateOf(PermissionUtils.hasOverlayPermission(ctx)) }
+    var usageGranted by remember { mutableStateOf(PermissionUtils.hasUsageAccess(ctx)) }
+    var protectionEnabled by remember { mutableStateOf(Prefs.isProtectionEnabled(ctx)) }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                overlayGranted = PermissionUtils.hasOverlayPermission(ctx)
+                usageGranted = PermissionUtils.hasUsageAccess(ctx)
+                protectionEnabled = Prefs.isProtectionEnabled(ctx)
+                if (ProtectionController.canStart(ctx) && Prefs.isProtectionEnabled(ctx)) {
+                    ProtectionService.start(ctx)
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(protectionEnabled, overlayGranted, usageGranted) {
+        if (protectionEnabled && overlayGranted && usageGranted) {
+            ProtectionService.start(ctx)
+        } else if (!protectionEnabled) {
+            ProtectionController.stop(ctx)
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
@@ -632,6 +748,34 @@ private fun AppSelectionScreen(
         contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
+        item {
+            ProtectionCard(
+                overlayGranted = overlayGranted,
+                usageGranted = usageGranted,
+                protectionEnabled = protectionEnabled,
+                onRequestOverlay = {
+                    val intent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:${ctx.packageName}")
+                    )
+                    ctx.startActivity(intent)
+                },
+                onRequestUsage = {
+                    ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                },
+                onToggleProtection = { enabled ->
+                    protectionEnabled = enabled
+                    Prefs.setProtectionEnabled(ctx, enabled)
+                    if (enabled && ProtectionController.canStart(ctx)) {
+                        ProtectionController.start(ctx)
+                    } else {
+                        ProtectionController.stop(ctx)
+                    }
+                }
+            )
+            Spacer(Modifier.height(12.dp))
+        }
+
         item {
             Column(
                 modifier = Modifier
