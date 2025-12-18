@@ -231,23 +231,28 @@ class ProtectionService : Service() {
     private fun resolveTopPackage(): String? {
         val usage = usageManager ?: return null
         val now = System.currentTimeMillis()
-        val events = usage.queryEvents(now - 5_000, now)
-        val event = UsageEvents.Event()
-        var lastPkg: String? = null
-        var lastTs = 0L
+        val events = usage.queryEvents(now - 10_000, now)
 
+        var latestTimestamp = -1L
+        var latestPackageName: String? = null
+        val event = UsageEvents.Event() // Create a reusable event object
+
+        // UsageEvents is NOT Iterable, so we must use a while loop
         while (events.hasNextEvent()) {
-            events.getNextEvent(event)
-            if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND ||
-                event.eventType == UsageEvents.Event.ACTIVITY_RESUMED
-            ) {
-                if (event.timeStamp > lastTs) {
-                    lastTs = event.timeStamp
-                    lastPkg = event.packageName
+            events.getNextEvent(event) // Populates the reusable event object
+
+            when (event.eventType) {
+                UsageEvents.Event.ACTIVITY_RESUMED,
+                UsageEvents.Event.MOVE_TO_FOREGROUND -> {
+                    if (event.timeStamp > latestTimestamp) {
+                        latestTimestamp = event.timeStamp
+                        latestPackageName = event.packageName
+                    }
                 }
             }
         }
-        return lastPkg
+
+        return latestPackageName
     }
 
     private fun completeUnlock(pkg: String, uid: Int?) {
