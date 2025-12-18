@@ -13,6 +13,7 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -31,9 +32,14 @@ import kotlinx.coroutines.launch
 
 class ProtectionService : Service() {
 
+    private companion object {
+        private const val TAG = "ProtectionService"
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var monitorJob: Job? = null
     private var lastLockedPkg: String? = null
+    private var lastPermissions: PermissionSnapshot? = null
 
     private val overlayLocker by lazy { OverlayLocker(this) }
     private val usageManager by lazy { getSystemService(UsageStatsManager::class.java) }
@@ -63,9 +69,8 @@ class ProtectionService : Service() {
     override fun onDestroy() {
         stopMonitoring()
         runCatching { unregisterReceiver(screenOffReceiver) }
-        overlayLocker.dismiss()
+        overlayLocker.dismiss("service_destroy")
         SessionTimeoutScheduler.cancel()
-        Prefs.setProtectionEnabled(this, false)
         super.onDestroy()
     }
 
@@ -75,6 +80,7 @@ class ProtectionService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification())
         startMonitoring()
         Prefs.setProtectionEnabled(this, true)
+        Log.i(TAG, "Protection service started")
         return START_STICKY
     }
 
@@ -92,13 +98,23 @@ class ProtectionService : Service() {
         val passwordRepo = PasswordRepository.get(this)
 
         while (isActive) {
-            val hasOverlay = PermissionUtils.hasOverlayPermission(this)
-            val hasUsage = PermissionUtils.hasUsageAccess(this)
+            val permissions = PermissionSnapshot.capture(this)
+            if (permissions != lastPermissions) {
+                lastPermissions = permissions
+                Log.i(TAG, "permissions overlay=${permissions.overlayGranted} usage=${permissions.usageGranted}")
+            }
+
+            val hasOverlay = permissions.overlayGranted
+            val hasUsage = permissions.usageGranted
             val interactive = powerManager?.isInteractive == true
             val delayMs = if (interactive) 650L else 1800L
 
             if (!hasOverlay || !hasUsage) {
-                overlayLocker.dismiss()
+                overlayLocker.dismiss("permissions_missing")
+                if (lastLockedPkg != null) {
+                    Log.w(TAG, "Stopping overlay due to missing permission")
+                }
+                lastLockedPkg = null
                 delay(delayMs)
                 continue
             }
@@ -172,12 +188,11 @@ class ProtectionService : Service() {
                     delay(delayMs)
                     continue
                 }
-                lastLockedPkg = topPkg
 
                 val label = appInfo?.loadLabel(packageManager)?.toString()
                 val allowBiometric = Prefs.useBiometric(this)
 
-                overlayLocker.showLockedApp(
+                val requested = overlayLocker.showLockedApp(
                     pkg = topPkg,
                     appLabel = label,
                     useBiometric = allowBiometric,
@@ -203,9 +218,13 @@ class ProtectionService : Service() {
                         }
                     }
                 )
+                if (requested) {
+                    lastLockedPkg = topPkg
+                    Log.i(TAG, "overlay_requested pkg=$topPkg label=$label")
+                }
             } else {
                 if (isRealApp && activeSessionPkg == null) clearUnlockedSession()
-                overlayLocker.dismiss()
+                overlayLocker.dismiss("not_locked")
                 lastLockedPkg = null
             }
 
@@ -242,7 +261,7 @@ class ProtectionService : Service() {
         Prefs.clearLastBackground(this)
         Prefs.setLastUnlockNow(this)
         lastLockedPkg = null
-        overlayLocker.dismiss()
+        overlayLocker.dismiss("unlocked")
 
         packageManager.getLaunchIntentForPackage(pkg)?.let { launch ->
             launch.addFlags(
