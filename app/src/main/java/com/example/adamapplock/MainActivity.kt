@@ -97,6 +97,7 @@ import com.example.adamapplock.protection.ProtectionUiState
 import com.example.adamapplock.protection.ProtectionViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.view.WindowManager
+import androidx.compose.foundation.border
 import com.example.adamapplock.lock.AppLockManager
 import com.example.adamapplock.lock.LockScreen
 import com.example.adamapplock.protection.BiometricUnlockActivity
@@ -842,7 +843,7 @@ private fun AppSelectionScreen(
                                     inactiveContainerColor = cs.surface,
                                     inactiveContentColor = cs.onSurface
                                 ),
-                                icon = null
+                                icon = {}
                             ) {
                                 Text(stringResource(segment.labelRes))
                             }
@@ -932,10 +933,10 @@ private fun AppSelectionScreen(
                             shape = MaterialTheme.shapes.large,
                             colors = CardDefaults.elevatedCardColors(containerColor = targetColor),
                             elevation = elevatedCardElevation,
-                            border = cardBorder,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .graphicsLayer(scaleX = targetScale, scaleY = targetScale)
+                                // Removed .border(...)
                                 .animateItem(
                                     fadeInSpec = null,
                                     fadeOutSpec = null,
