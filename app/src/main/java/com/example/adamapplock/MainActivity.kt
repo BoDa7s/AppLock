@@ -2,6 +2,7 @@ package com.example.adamapplock
 
 import android.annotation.SuppressLint
 import android.app.Application
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -57,6 +58,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -76,6 +78,11 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
+import android.provider.Settings
+import com.example.adamapplock.protection.HealthCheckResult
+import com.example.adamapplock.protection.PermissionSnapshot
+import com.example.adamapplock.protection.ProtectionUiState
+import com.example.adamapplock.protection.ProtectionViewModel
 
 
 class MainActivity : AppCompatActivity() {
@@ -116,6 +123,7 @@ class MainActivity : AppCompatActivity() {
                         val tabs = listOf(R.string.tab_main, R.string.tab_settings)
                         val cs = MaterialTheme.colorScheme
                         val appListViewModel: AppListViewModel = viewModel()
+                        val protectionViewModel: ProtectionViewModel = viewModel()
 
                         Column(
                             Modifier.fillMaxSize()
@@ -134,14 +142,19 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             when (selectedTab) {
-                                0 -> AppSelectionScreen(appListViewModel)
+                                0 -> AppSelectionScreen(
+                                    appListViewModel = appListViewModel,
+                                    protectionViewModel = protectionViewModel,
+                                    onOpenSettings = { selectedTab = 1 }
+                                )
                                 1 -> SettingsScreen(
                                     onBack = { selectedTab = 0 },
                                     themeMode = themeMode,
                                     onThemeChange = { mode ->
                                         themeMode = mode
                                         Prefs.setThemeMode(ctx, mode) // keep your theme persistence
-                                    }
+                                    },
+                                    protectionViewModel = protectionViewModel
                                 )
                             }
                         }
@@ -346,12 +359,26 @@ private val lockTimerOptions = listOf(
 fun SettingsScreen(
     onBack: () -> Unit,
     themeMode: ThemeMode,
-    onThemeChange: (ThemeMode) -> Unit
+    onThemeChange: (ThemeMode) -> Unit,
+    protectionViewModel: ProtectionViewModel
 ) {
     BackHandler { onBack() }
 
     val cs = MaterialTheme.colorScheme
     val ctx = LocalContext.current
+    val protectionUiState by protectionViewModel.uiState.collectAsState()
+    val permissions = protectionUiState.permissions
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                protectionViewModel.refreshPermissions(log = true)
+                protectionViewModel.refreshServiceState()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var useBiometric by remember { mutableStateOf(Prefs.useBiometric(ctx)) }
     var lockOnScreenOff by remember { mutableStateOf(Prefs.lockOnScreenOff(ctx)) }
     var timerExpanded by remember { mutableStateOf(false) }
@@ -376,6 +403,31 @@ fun SettingsScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp) // spacing between items
     ) {
+        // --- Protection
+        item { Text(stringResource(R.string.settings_section_protection), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
+        item {
+            ProtectionSettingsCard(
+                state = protectionUiState,
+                permissions = permissions,
+                onToggle = { enabled ->
+                    if (enabled && !permissions.ready) {
+                        Toast.makeText(ctx, R.string.permission_missing_toast, Toast.LENGTH_SHORT).show()
+                    }
+                    protectionViewModel.setProtectionEnabled(enabled)
+                },
+                onRequestOverlay = {
+                    val intent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:${ctx.packageName}")
+                    )
+                    ctx.startActivity(intent)
+                },
+                onRequestUsage = { ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) },
+                onRunHealthCheck = { protectionViewModel.runHealthCheck() }
+            )
+        }
+        item { HorizontalDivider(color = cs.outlineVariant) }
+
         // --- Security
         item { Text(stringResource(R.string.settings_section_security), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
         item { ChangePasswordRow() }
@@ -570,11 +622,16 @@ private enum class AppSelectionSegment(@StringRes val labelRes: Int) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppSelectionScreen(
-    appListViewModel: AppListViewModel
+    appListViewModel: AppListViewModel,
+    protectionViewModel: ProtectionViewModel,
+    onOpenSettings: () -> Unit
 ) {
     val ctx = LocalContext.current
     val cs = MaterialTheme.colorScheme
     val uiState by appListViewModel.uiState.collectAsState()
+    val protectionState by protectionViewModel.uiState.collectAsState()
+    val permissions = protectionState.permissions
+    val readyForProtection = permissions.ready
 
     var locked by remember { mutableStateOf(Prefs.getLockedApps(ctx).toSet()) }
     var selectedSegment by rememberSaveable { mutableStateOf(AppSelectionSegment.Unlocked) }
@@ -607,6 +664,44 @@ private fun AppSelectionScreen(
         }
     }
 
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                locked = Prefs.getLockedApps(ctx).toSet()
+                protectionViewModel.refreshPermissions(log = true)
+                protectionViewModel.refreshServiceState()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(Unit) {
+        protectionViewModel.refreshPermissions(log = true)
+        protectionViewModel.refreshServiceState()
+    }
+
+    val openOverlaySettings = remember(ctx.packageName) {
+        {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:${ctx.packageName}")
+            )
+            ctx.startActivity(intent)
+        }
+    }
+    val openUsageSettings = remember { { ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) } }
+
+    if (permissions.missingBoth) {
+        PermissionGate(
+            permissions = permissions,
+            onRequestOverlay = openOverlaySettings,
+            onRequestUsage = openUsageSettings
+        )
+        return
+    }
+
     Box(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
@@ -632,6 +727,25 @@ private fun AppSelectionScreen(
         contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
+        item {
+            ProtectionStatusPanel(
+                state = protectionState,
+                onOpenSettings = onOpenSettings
+            )
+            Spacer(Modifier.height(12.dp))
+        }
+
+        if (!readyForProtection) {
+            item {
+                PermissionRequestList(
+                    permissions = permissions,
+                    onRequestOverlay = openOverlaySettings,
+                    onRequestUsage = openUsageSettings
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+        }
+
         item {
             Column(
                 modifier = Modifier
@@ -764,6 +878,295 @@ private fun AppSelectionScreen(
         }
     }
 }
+
+@Composable
+private fun PermissionRequestList(
+    permissions: PermissionSnapshot,
+    onRequestOverlay: () -> Unit,
+    onRequestUsage: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (!permissions.overlayGranted) {
+            PermissionRequestCard(
+                title = stringResource(R.string.permission_overlay_title),
+                description = stringResource(R.string.permission_overlay_description),
+                granted = false,
+                onClick = onRequestOverlay
+            )
+        }
+        if (!permissions.usageGranted) {
+            PermissionRequestCard(
+                title = stringResource(R.string.permission_usage_title),
+                description = stringResource(R.string.permission_usage_description),
+                granted = false,
+                onClick = onRequestUsage
+            )
+        }
+    }
+}
+
+@Composable
+private fun PermissionRequestCard(
+    title: String,
+    description: String,
+    granted: Boolean,
+    onClick: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = cs.onSurface)
+            Text(description, color = cs.onSurfaceVariant)
+            if (granted) {
+                Text(text = stringResource(R.string.permission_granted_label), color = cs.tertiary)
+            } else {
+                Button(onClick = onClick, modifier = Modifier.align(Alignment.End)) {
+                    Text(stringResource(R.string.permission_button_open))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProtectionStatusPanel(
+    state: ProtectionUiState,
+    onOpenSettings: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    val statusText = when {
+        state.protectionEnabled && state.permissions.ready -> stringResource(R.string.protection_status_running)
+        state.pendingEnable -> stringResource(R.string.protection_status_pending_permissions)
+        !state.permissions.ready -> stringResource(R.string.protection_status_permissions_missing)
+        else -> stringResource(R.string.protection_status_stopped)
+    }
+    val runningDetail = if (state.serviceRunning) {
+        stringResource(R.string.protection_service_running)
+    } else {
+        stringResource(R.string.protection_service_not_running)
+    }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(statusText, style = MaterialTheme.typography.titleMedium, color = cs.onSurface)
+            Text(
+                text = stringResource(R.string.protection_status_summary),
+                color = cs.onSurfaceVariant
+            )
+            Text(runningDetail, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = onOpenSettings, modifier = Modifier.align(Alignment.End)) {
+                Text(stringResource(R.string.protection_manage_in_settings))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionGate(
+    permissions: PermissionSnapshot,
+    onRequestOverlay: () -> Unit,
+    onRequestUsage: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(cs.background)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(R.string.permission_gate_title),
+            style = MaterialTheme.typography.titleLarge,
+            color = cs.onBackground
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.permission_gate_description),
+            color = cs.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Spacer(Modifier.height(16.dp))
+        PermissionRequestList(
+            permissions = permissions,
+            onRequestOverlay = onRequestOverlay,
+            onRequestUsage = onRequestUsage
+        )
+    }
+}
+
+@Composable
+private fun ProtectionSettingsCard(
+    state: ProtectionUiState,
+    permissions: PermissionSnapshot,
+    onToggle: (Boolean) -> Unit,
+    onRequestOverlay: () -> Unit,
+    onRequestUsage: () -> Unit,
+    onRunHealthCheck: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    val toggleChecked = state.protectionEnabled || state.pendingEnable
+    val ready = permissions.ready
+    val statusText = when {
+        state.protectionEnabled && ready -> stringResource(R.string.protection_status_running)
+        state.pendingEnable -> stringResource(R.string.protection_status_pending_permissions)
+        !ready -> stringResource(R.string.protection_status_permissions_missing)
+        else -> stringResource(R.string.protection_status_stopped)
+    }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = stringResource(R.string.protection_settings_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = cs.onSurface
+                    )
+                    Text(statusText, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                }
+                Switch(
+                    checked = toggleChecked,
+                    onCheckedChange = onToggle,
+                    enabled = ready || toggleChecked,
+                    colors = SwitchDefaults.colors(
+                        checkedBorderColor = Color.Transparent,
+                        checkedThumbColor = cs.onPrimary,
+                        checkedTrackColor = cs.primary,
+                        uncheckedThumbColor = cs.onSurfaceVariant,
+                        uncheckedTrackColor = cs.surfaceVariant,
+                        uncheckedBorderColor = Color.Transparent
+                    )
+                )
+            }
+
+            Text(
+                text = stringResource(R.string.protection_settings_description),
+                color = cs.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            if (!ready) {
+                PermissionRequestList(
+                    permissions = permissions,
+                    onRequestOverlay = onRequestOverlay,
+                    onRequestUsage = onRequestUsage
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onRunHealthCheck,
+                    enabled = !state.healthCheckInProgress,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val label = if (state.healthCheckInProgress) {
+                        stringResource(R.string.health_check_running)
+                    } else {
+                        stringResource(R.string.health_check_button)
+                    }
+                    Text(label)
+                }
+
+                state.healthCheckResult?.let { result ->
+                    HealthCheckSummary(result = result)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HealthCheckSummary(result: HealthCheckResult) {
+    val cs = MaterialTheme.colorScheme
+    val passed = result.ready && result.serviceRunning && result.overlayTestPassed
+    val statusText = if (passed) {
+        stringResource(R.string.health_check_passed)
+    } else {
+        stringResource(R.string.health_check_needs_attention)
+    }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(statusText, color = if (passed) cs.primary else cs.error, style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = stringResource(
+                    R.string.health_check_detail_overlay,
+                    result.overlayGranted.toStatusLabel()
+                ),
+                color = cs.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(
+                    R.string.health_check_detail_usage,
+                    result.usageGranted.toStatusLabel()
+                ),
+                color = cs.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(
+                    R.string.health_check_detail_service,
+                    result.serviceRunning.toStatusLabel()
+                ),
+                color = cs.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(
+                    R.string.health_check_detail_overlay_draw,
+                    result.overlayTestPassed.toStatusLabel()
+                ),
+                color = cs.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun Boolean.toStatusLabel(): String =
+    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_missing)
 
 class AppListViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(AppListUiState())
