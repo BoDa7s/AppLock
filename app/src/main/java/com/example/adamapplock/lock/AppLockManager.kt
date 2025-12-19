@@ -8,16 +8,24 @@ object AppLockManager {
         val lastUnlock = Prefs.lastAppUnlock(context)
         if (lastUnlock == 0L) return true
         val timer = Prefs.getLockTimerMillis(context)
-        val elapsed = System.currentTimeMillis() - lastUnlock
-        return timer == Prefs.LOCK_TIMER_IMMEDIATE || elapsed >= timer
+        if (timer == Prefs.LOCK_TIMER_IMMEDIATE) return true
+
+        val reference = Prefs.lastAppBackground(context).takeIf { it != 0L } ?: lastUnlock
+        val elapsed = System.currentTimeMillis() - reference
+        return elapsed >= timer
     }
 
     fun markUnlocked(context: Context) {
         Prefs.setAppLastUnlockNow(context)
-        Prefs.clearLastBackground(context)
+        Prefs.clearAppLastBackground(context)
     }
 
     fun lockNow(context: Context) {
         Prefs.clearAppUnlock(context)
+        Prefs.clearAppLastBackground(context)
+    }
+
+    fun markBackground(context: Context) {
+        Prefs.setAppLastBackgroundNow(context)
     }
 }

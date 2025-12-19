@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
@@ -94,6 +95,14 @@ import com.example.adamapplock.protection.HealthCheckResult
 import com.example.adamapplock.protection.PermissionSnapshot
 import com.example.adamapplock.protection.ProtectionUiState
 import com.example.adamapplock.protection.ProtectionViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.view.WindowManager
+import com.example.adamapplock.lock.AppLockManager
+import com.example.adamapplock.lock.LockScreen
+import com.example.adamapplock.protection.BiometricUnlockActivity
+
+
+private enum class AppLockGateState { Loading, Locked, Unlocked }
 
 
 class MainActivity : AppCompatActivity() {
@@ -104,19 +113,49 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        val activity = this@MainActivity
         setContent {
             val ctx = LocalContext.current
             val repo = remember { PasswordRepository.get(ctx) }
 
             // null = loading; true = needs setup; false = ready
             var needsSetup by remember { mutableStateOf<Boolean?>(null) }
-            LaunchedEffect(Unit) { needsSetup = !repo.isPasswordSet() }
+            var lockState by remember { mutableStateOf(AppLockGateState.Loading) }
+
+            LaunchedEffect(Unit) {
+                val missingPasscode = !repo.isPasswordSet()
+                needsSetup = missingPasscode
+                if (!missingPasscode) {
+                    lockState = if (AppLockManager.shouldLock(ctx)) AppLockGateState.Locked else AppLockGateState.Unlocked
+                }
+            }
+
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner, needsSetup) {
+                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                    if (needsSetup == false) {
+                        when (event) {
+                            androidx.lifecycle.Lifecycle.Event.ON_RESUME -> {
+                                val lockRequired = AppLockManager.shouldLock(ctx)
+                                lockState = if (lockRequired) AppLockGateState.Locked else AppLockGateState.Unlocked
+                                if (!lockRequired) {
+                                    AppLockManager.markUnlocked(ctx)
+                                }
+                            }
+
+                            androidx.lifecycle.Lifecycle.Event.ON_STOP -> AppLockManager.markBackground(ctx)
+
+                            else -> {}
+                        }
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
 
             // App-wide theme state
             var themeMode by remember { mutableStateOf(Prefs.getThemeMode(ctx)) }
-
-
-
+            var useBiometric by remember { mutableStateOf(Prefs.useBiometric(ctx)) }
 
             AdamAppLockTheme(themeMode = themeMode) {
 
@@ -126,10 +165,64 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     true -> PasscodeSetupScreen(
-                        onDone = { needsSetup = false } // setup screen already saved to repo  // flip immediately after save
+                        onDone = {
+                            AppLockManager.markUnlocked(ctx)
+                            lockState = AppLockGateState.Unlocked
+                            needsSetup = false // setup screen already saved to repo  // flip immediately after save
+                        }
                     )
 
                     false -> {
+                        when (lockState) {
+                            AppLockGateState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+
+                            AppLockGateState.Locked -> {
+                                DisposableEffect(Unit) {
+                                    activity.window.setFlags(
+                                        WindowManager.LayoutParams.FLAG_SECURE,
+                                        WindowManager.LayoutParams.FLAG_SECURE
+                                    )
+                                    onDispose { activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+                                }
+
+                                LockScreen(
+                                    lockedAppLabel = ctx.getString(R.string.app_name),
+                                    useBiometric = useBiometric,
+                                    onBiometric = {
+                                        BiometricUnlockActivity.launch(ctx) { success ->
+                                            if (success) {
+                                                AppLockManager.markUnlocked(ctx)
+                                                lockState = AppLockGateState.Unlocked
+                                            }
+                                        }
+                                    },
+                                    onUnlock = { entered ->
+                                        val digits = entered.filter { it.isDigit() }
+                                        if (digits.isEmpty()) {
+                                            Toast.makeText(ctx, R.string.passcode_empty_error, Toast.LENGTH_SHORT).show()
+                                            return@LockScreen
+                                        }
+
+                                        val chars = digits.toCharArray()
+                                        val ok = repo.verifyPassword(chars)
+                                        chars.fill('\u0000')
+                                        if (ok) {
+                                            AppLockManager.markUnlocked(ctx)
+                                            lockState = AppLockGateState.Unlocked
+                                        } else {
+                                            Toast.makeText(ctx, R.string.passcode_wrong_error, Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                )
+
+                                return@AdamAppLockTheme
+                            }
+
+                            AppLockGateState.Unlocked -> Unit
+                        }
+
                         var selectedTab by remember { mutableIntStateOf(0) } // 0 = Main, 1 = Settings
                         val tabs = listOf(R.string.tab_main, R.string.tab_settings)
                         val cs = MaterialTheme.colorScheme
@@ -188,7 +281,12 @@ class MainActivity : AppCompatActivity() {
                                         themeMode = mode
                                         Prefs.setThemeMode(ctx, mode) // keep your theme persistence
                                     },
-                                    protectionViewModel = protectionViewModel
+                                    protectionViewModel = protectionViewModel,
+                                    useBiometric = useBiometric,
+                                    onBiometricToggle = { enabled ->
+                                        useBiometric = enabled
+                                        Prefs.setUseBiometric(ctx, enabled)
+                                    }
                                 )
                             }
                         }
@@ -394,7 +492,9 @@ fun SettingsScreen(
     onBack: () -> Unit,
     themeMode: ThemeMode,
     onThemeChange: (ThemeMode) -> Unit,
-    protectionViewModel: ProtectionViewModel
+    protectionViewModel: ProtectionViewModel,
+    useBiometric: Boolean,
+    onBiometricToggle: (Boolean) -> Unit
 ) {
     BackHandler { onBack() }
 
@@ -413,7 +513,6 @@ fun SettingsScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    var useBiometric by remember { mutableStateOf(Prefs.useBiometric(ctx)) }
     var lockOnScreenOff by remember { mutableStateOf(Prefs.lockOnScreenOff(ctx)) }
     var timerExpanded by remember { mutableStateOf(false) }
     var selectedTimerMillis by remember { mutableLongStateOf(Prefs.getLockTimerMillis(ctx)) }
@@ -472,10 +571,7 @@ fun SettingsScreen(
                 trailingContent = {
                     Switch(
                         checked = useBiometric,
-                        onCheckedChange = {
-                            useBiometric = it
-                            Prefs.setUseBiometric(ctx, it)
-                        },
+                        onCheckedChange = onBiometricToggle,
                         colors = SwitchDefaults.colors(
                             checkedBorderColor = Color.Transparent,
                             checkedThumbColor = cs.onPrimary,
@@ -674,6 +770,10 @@ private fun AppSelectionScreen(
     // Use Context to get the system AccessibilityManager
     val am = ctx.getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) as? android.view.accessibility.AccessibilityManager
     val reduceMotion = am?.isTouchExplorationEnabled == true
+    val lockedContainerColor = cs.primaryContainer
+    val unlockedContainerColor = cs.surfaceContainerHigh
+    val elevatedCardElevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp, pressedElevation = 2.dp)
+    val cardBorder = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.6f))
 
     val lockedApps = remember(uiState.apps, locked) {
         uiState.apps.filter { locked.contains(it.pkg) }
@@ -741,7 +841,8 @@ private fun AppSelectionScreen(
                                     activeContentColor = cs.onPrimaryContainer,
                                     inactiveContainerColor = cs.surface,
                                     inactiveContentColor = cs.onSurface
-                                )
+                                ),
+                                icon = null
                             ) {
                                 Text(stringResource(segment.labelRes))
                             }
@@ -817,7 +918,7 @@ private fun AppSelectionScreen(
                     ) { app ->
                         val checked = locked.contains(app.pkg)
                         val targetColor by animateColorAsState(
-                            targetValue = if (checked) cs.primaryContainer else cs.surface,
+                            targetValue = if (checked) lockedContainerColor else unlockedContainerColor,
                             animationSpec = if (reduceMotion) snap() else spring(dampingRatio = Spring.DampingRatioNoBouncy),
                             label = "cardColor"
                         )
@@ -830,6 +931,8 @@ private fun AppSelectionScreen(
                         ElevatedCard(
                             shape = MaterialTheme.shapes.large,
                             colors = CardDefaults.elevatedCardColors(containerColor = targetColor),
+                            elevation = elevatedCardElevation,
+                            border = cardBorder,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .graphicsLayer(scaleX = targetScale, scaleY = targetScale)
