@@ -10,11 +10,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.LocalHapticFeedback
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -25,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -91,6 +88,8 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
 import android.provider.Settings
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.example.adamapplock.protection.HealthCheckResult
 import com.example.adamapplock.protection.PermissionSnapshot
 import com.example.adamapplock.protection.ProtectionUiState
@@ -672,8 +671,9 @@ private fun AppSelectionScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
-    val accessibilityManager = LocalAccessibilityManager.current
-    val reduceMotion = accessibilityManager?.isTouchExplorationEnabled == true
+    // Use Context to get the system AccessibilityManager
+    val am = ctx.getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) as? android.view.accessibility.AccessibilityManager
+    val reduceMotion = am?.isTouchExplorationEnabled == true
 
     val lockedApps = remember(uiState.apps, locked) {
         uiState.apps.filter { locked.contains(it.pkg) }
@@ -833,10 +833,13 @@ private fun AppSelectionScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .graphicsLayer(scaleX = targetScale, scaleY = targetScale)
-                                .animateItemPlacement(
-                                    animationSpec = if (reduceMotion) snap() else spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                .animateItem(
+                                    fadeInSpec = null,
+                                    fadeOutSpec = null,
+                                    placementSpec = if (reduceMotion) snap() else spring(dampingRatio = Spring.DampingRatioLowBouncy)
                                 )
-                        ) {
+                        )
+                        {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
