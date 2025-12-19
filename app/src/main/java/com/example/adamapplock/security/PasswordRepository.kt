@@ -139,4 +139,12 @@ class PasswordRepository private constructor(prefsName: String, context: Context
     }
 
     private fun wipe(chars: CharArray) { for (i in chars.indices) chars[i] = '\u0000' }
+
+    fun clearAll() {
+        prefs.edit().clear().commit()
+        runCatching {
+            val ks = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+            ks.deleteEntry(KEY_ALIAS)
+        }
+    }
 }

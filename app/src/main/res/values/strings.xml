@@ -67,6 +67,8 @@
     <!-- App selection -->
     <string name="segment_unlocked">Unlocked</string>
     <string name="segment_locked">Locked</string>
+    <string name="snackbar_moved_locked">Moved %1$s to Locked</string>
+    <string name="snackbar_moved_unlocked">Moved %1$s to Unlocked</string>
     <string name="no_launchable_apps_found">No launchable apps found</string>
     <string name="no_locked_apps_yet">No locked apps yet</string>
     <string name="all_apps_locked">All of your apps are currently locked</string>

@@ -9,15 +9,23 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.LocalHapticFeedback
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -55,6 +63,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -170,10 +180,6 @@ class MainActivity : AppCompatActivity() {
                             when (selectedTab) {
                                 0 -> AppSelectionScreen(
                                     appListViewModel = appListViewModel,
-                                    protectionViewModel = protectionViewModel,
-                                    protectionState = protectionState,
-                                    onRequestOverlay = overlaySettingsIntent,
-                                    onRequestUsage = usageSettingsIntent,
                                     onOpenSettings = { selectedTab = 1 }
                                 )
                                 1 -> SettingsScreen(
@@ -652,22 +658,22 @@ private enum class AppSelectionSegment(@StringRes val labelRes: Int) {
 @Composable
 private fun AppSelectionScreen(
     appListViewModel: AppListViewModel,
-    protectionViewModel: ProtectionViewModel,
-    protectionState: ProtectionUiState,
-    onRequestOverlay: () -> Unit,
-    onRequestUsage: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     val ctx = LocalContext.current
     val cs = MaterialTheme.colorScheme
     val uiState by appListViewModel.uiState.collectAsState()
-    val permissions = protectionState.permissions
-    val readyForProtection = permissions.ready
 
     var locked by remember { mutableStateOf(Prefs.getLockedApps(ctx).toSet()) }
+    var hapticsEnabled by remember { mutableStateOf(Prefs.hapticsEnabled(ctx)) }
     var selectedSegment by rememberSaveable { mutableStateOf(AppSelectionSegment.Unlocked) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val segments = remember { AppSelectionSegment.entries.toTypedArray() }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+    val accessibilityManager = LocalAccessibilityManager.current
+    val reduceMotion = accessibilityManager?.isTouchExplorationEnabled == true
 
     val lockedApps = remember(uiState.apps, locked) {
         uiState.apps.filter { locked.contains(it.pkg) }
@@ -700,81 +706,48 @@ private fun AppSelectionScreen(
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
                 locked = Prefs.getLockedApps(ctx).toSet()
-                protectionViewModel.refreshPermissions(log = true)
-                protectionViewModel.refreshServiceState()
+                hapticsEnabled = Prefs.hapticsEnabled(ctx)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LaunchedEffect(Unit) {
-        protectionViewModel.refreshPermissions(log = true)
-        protectionViewModel.refreshServiceState()
-    }
-
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        SingleChoiceSegmentedButtonRow {
-            segments.forEachIndexed { index, segment ->
-                SegmentedButton(
-                    selected = selectedSegment == segment,
-                    onClick = { selectedSegment = segment },
-                    shape = SegmentedButtonDefaults.itemShape(index, segments.size)
-                ) { Text(stringResource(segment.labelRes)) }
-            }
-        }
-    }
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(cs.background)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
-        item {
-            ProtectionStatusPanel(
-                state = protectionState,
-                onOpenSettings = onOpenSettings
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(16.dp)
             )
-            Spacer(Modifier.height(12.dp))
-        }
-
-        if (!readyForProtection) {
-            item {
-                PermissionRequestList(
-                    permissions = permissions,
-                    onRequestOverlay = onRequestOverlay,
-                    onRequestUsage = onRequestUsage
-                )
-                Spacer(Modifier.height(12.dp))
-            }
-        }
-
-        item {
+        },
+        containerColor = cs.background,
+        topBar = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                /*SingleChoiceSegmentedButtonRow {
-                    segments.forEachIndexed { index, segment ->
-                        SegmentedButton(
-                            selected = selectedSegment == segment,
-                            onClick = { selectedSegment = segment },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = segments.size)
-                        ) {
-                            Text(segment.label)
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    SingleChoiceSegmentedButtonRow {
+                        segments.forEachIndexed { index, segment ->
+                            SegmentedButton(
+                                selected = selectedSegment == segment,
+                                onClick = { selectedSegment = segment },
+                                shape = SegmentedButtonDefaults.itemShape(index, segments.size),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = cs.primaryContainer,
+                                    activeContentColor = cs.onPrimaryContainer,
+                                    inactiveContainerColor = cs.surface,
+                                    inactiveContentColor = cs.onSurface
+                                )
+                            ) {
+                                Text(stringResource(segment.labelRes))
+                            }
                         }
                     }
-                }*/
+                }
 
                 OutlinedTextField(
                     value = searchQuery,
@@ -794,97 +767,153 @@ private fun AppSelectionScreen(
                     )
                 )
             }
-            HorizontalDivider(thickness = DividerDefaults.Thickness, color = cs.outlineVariant)
         }
-
+    ) { padding ->
         when {
             uiState.isLoading -> {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
             }
 
             visibleApps.isEmpty() -> {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = emptyStateMessage, color = cs.onSurfaceVariant)
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = emptyStateMessage, color = cs.onSurfaceVariant)
                 }
-
-                item { Spacer(Modifier.height(24.dp)) }
             }
 
             else -> {
-                items(
-                    items = visibleApps,
-                    key = { it.pkg }
-                ) { app ->
-                    val checked = locked.contains(app.pkg)
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (app.icon != null) {
-                            Image(
-                                bitmap = app.icon,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(MaterialTheme.shapes.small),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Outlined.Android,
-                                contentDescription = null,
-                                tint = cs.onSurfaceVariant,
-                                modifier = Modifier.size(40.dp)
-                            )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(cs.background)
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp)
+                        .padding(padding),
+                    contentPadding = PaddingValues(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            TextButton(onClick = onOpenSettings, modifier = Modifier.align(Alignment.CenterEnd)) {
+                                Text(stringResource(R.string.protection_manage_in_settings))
+                            }
                         }
-
-                        Spacer(Modifier.width(12.dp))
-
-                        Text(
-                            text = app.label,
-                            color = cs.onBackground,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Switch(
-                            checked = checked,
-                            onCheckedChange = {
-                                Prefs.toggleLocked(ctx, app.pkg)
-                                locked = Prefs.getLockedApps(ctx).toSet()
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedBorderColor = Color.Transparent,
-                                checkedThumbColor = cs.onPrimary,
-                                checkedTrackColor = cs.primary,
-                                uncheckedThumbColor = cs.onSurfaceVariant,
-                                uncheckedTrackColor = cs.surfaceVariant,
-                                uncheckedBorderColor = Color.Transparent
-                            )
-                        )
                     }
 
-                    HorizontalDivider(thickness = DividerDefaults.Thickness, color = cs.outlineVariant)
-                }
+                    items(
+                        items = visibleApps,
+                        key = { it.pkg }
+                    ) { app ->
+                        val checked = locked.contains(app.pkg)
+                        val targetColor by animateColorAsState(
+                            targetValue = if (checked) cs.primaryContainer else cs.surface,
+                            animationSpec = if (reduceMotion) snap() else spring(dampingRatio = Spring.DampingRatioNoBouncy),
+                            label = "cardColor"
+                        )
+                        val targetScale by animateFloatAsState(
+                            targetValue = if (checked) 0.98f else 1f,
+                            animationSpec = if (reduceMotion) snap() else spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                            label = "cardScale"
+                        )
 
-                item { Spacer(Modifier.height(24.dp)) }
+                        ElevatedCard(
+                            shape = MaterialTheme.shapes.large,
+                            colors = CardDefaults.elevatedCardColors(containerColor = targetColor),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .graphicsLayer(scaleX = targetScale, scaleY = targetScale)
+                                .animateItemPlacement(
+                                    animationSpec = if (reduceMotion) snap() else spring(dampingRatio = Spring.DampingRatioLowBouncy)
+                                )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (app.icon != null) {
+                                    Image(
+                                        bitmap = app.icon,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(MaterialTheme.shapes.medium),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Android,
+                                        contentDescription = null,
+                                        tint = cs.onSurfaceVariant,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                }
+
+                                Spacer(Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = app.label,
+                                        color = cs.onSurface,
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Text(
+                                        text = if (checked) stringResource(R.string.segment_locked) else stringResource(R.string.segment_unlocked),
+                                        color = cs.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+
+                                Switch(
+                                    checked = checked,
+                                    onCheckedChange = { nowLocked ->
+                                        val next = locked.toMutableSet().apply {
+                                            if (nowLocked) add(app.pkg) else remove(app.pkg)
+                                        }
+                                        Prefs.saveLockedApps(ctx, next)
+                                        locked = next
+
+                                        if (hapticsEnabled) {
+                                            haptics.performHapticFeedback(
+                                                if (nowLocked) HapticFeedbackType.LongPress else HapticFeedbackType.TextHandleMove
+                                            )
+                                        }
+
+                                        coroutineScope.launch {
+                                            snackbarHostState.currentSnackbarData?.dismiss()
+                                            snackbarHostState.showSnackbar(
+                                                ctx.getString(
+                                                    if (nowLocked) R.string.snackbar_moved_locked else R.string.snackbar_moved_unlocked,
+                                                    app.label
+                                                )
+                                            )
+                                        }
+                                    },
+                                    colors = SwitchDefaults.colors(
+                                        checkedBorderColor = Color.Transparent,
+                                        checkedThumbColor = cs.onPrimary,
+                                        checkedTrackColor = cs.primary,
+                                        uncheckedThumbColor = cs.onSurfaceVariant,
+                                        uncheckedTrackColor = cs.surfaceVariant,
+                                        uncheckedBorderColor = Color.Transparent
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
