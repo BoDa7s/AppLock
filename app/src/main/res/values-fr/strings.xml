@@ -25,6 +25,7 @@
 
     <!-- Settings sections -->
     <string name="settings_section_security">Sécurité</string>
+    <string name="settings_section_protection">Protection</string>
     <string name="settings_section_lock_timers">Minuteries de verrouillage</string>
     <string name="settings_section_language">Langue de l\'application</string>
     <string name="settings_section_theme">Thème</string>
@@ -89,6 +90,45 @@
     <string name="biometric_prompt_title">Déverrouiller</string>
     <string name="biometric_prompt_subtitle">Utilisez l\'empreinte digitale pour déverrouiller</string>
     <string name="biometric_prompt_use_passcode">Utiliser le code</string>
+
+    <!-- Permissions & protection -->
+    <string name="permission_overlay_title">Afficher au-dessus des autres applications</string>
+    <string name="permission_overlay_description">Autorisez AdamAppLock à apparaître au premier plan pour afficher l\'écran de verrouillage au-dessus des applications protégées.</string>
+    <string name="permission_usage_title">Accès aux statistiques d\'utilisation</string>
+    <string name="permission_usage_description">L\'accès à l\'utilisation permet à AdamAppLock de détecter quelle application est ouverte afin de protéger celles que vous choisissez.</string>
+    <string name="permission_button_open">Ouvrir les paramètres</string>
+    <string name="permission_granted_label">Autorisation accordée</string>
+    <string name="permission_required_label">Autorisation requise</string>
+    <string name="permission_gate_title">Activer les autorisations requises</string>
+    <string name="permission_gate_description">Activez les deux autorisations pour commencer à protéger vos applications. La navigation est bloquée jusqu\'à ce qu\'elles soient accordées.</string>
+    <string name="permission_missing_toast">Accordez la superposition et l\'accès à l\'utilisation pour activer la protection.</string>
+    <string name="protection_toggle_title">Démarrer la protection</string>
+    <string name="protection_toggle_stop">Arrêter la protection</string>
+    <string name="protection_toggle_description">Verrouillez les applications sélectionnées à l\'aide de la superposition et de l\'accès à l\'utilisation. Nécessite une notification persistante.</string>
+    <string name="protection_status_running">La protection est active</string>
+    <string name="protection_status_stopped">La protection est désactivée</string>
+    <string name="protection_status_pending_permissions">En attente d\'autorisations pour activer la protection</string>
+    <string name="protection_status_permissions_missing">Autorisations manquantes \u2013 accordez la superposition et l\'accès à l\'utilisation</string>
+    <string name="protection_status_summary">AdamAppLock surveille vos applications verrouillées et affiche la superposition lorsqu\'une application protégée s\'ouvre.</string>
+    <string name="protection_service_running">Le service de protection est en cours d\'exécution</string>
+    <string name="protection_service_not_running">Le service de protection est en pause</string>
+    <string name="protection_manage_in_settings">Gérer la protection dans les paramètres</string>
+    <string name="protection_settings_title">Activer la protection avec superposition</string>
+    <string name="protection_settings_description">Démarrez ou arrêtez la superposition de verrouillage et sa notification. Les autorisations doivent rester accordées pour que la superposition s\'affiche correctement.</string>
+    <string name="protection_notification_title">Protection des applications en cours</string>
+    <string name="protection_notification_body">AdamAppLock surveille les applications verrouillées.</string>
+    <string name="protection_notification_channel">Protection des applications</string>
+    <string name="protection_notification_channel_description">Maintient le service de protection actif pour verrouiller les applications sélectionnées.</string>
+    <string name="health_check_button">Lancer le contrôle de protection</string>
+    <string name="health_check_running">Contrôle en cours…</string>
+    <string name="health_check_passed">Contrôle réussi</string>
+    <string name="health_check_needs_attention">Nécessite une attention</string>
+    <string name="health_check_detail_overlay">Autorisation de superposition : %1$s</string>
+    <string name="health_check_detail_usage">Accès à l\'utilisation : %1$s</string>
+    <string name="health_check_detail_service">Service en cours : %1$s</string>
+    <string name="health_check_detail_overlay_draw">Rendu de la superposition : %1$s</string>
+    <string name="health_check_state_ok">OK</string>
+    <string name="health_check_state_missing">Manquant</string>
 
     <!-- Misc -->
     <string name="version_unknown">Inconnu</string>

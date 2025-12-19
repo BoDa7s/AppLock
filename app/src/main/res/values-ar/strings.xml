@@ -25,6 +25,7 @@
 
     <!-- Settings sections -->
     <string name="settings_section_security">الأمان</string>
+    <string name="settings_section_protection">الحماية</string>
     <string name="settings_section_lock_timers">مؤقتات القفل</string>
     <string name="settings_section_language">لغة التطبيق</string>
     <string name="settings_section_theme">السمة</string>
@@ -89,6 +90,45 @@
     <string name="biometric_prompt_title">إلغاء القفل</string>
     <string name="biometric_prompt_subtitle">استخدم البصمة لإلغاء القفل</string>
     <string name="biometric_prompt_use_passcode">استخدم رمز المرور</string>
+
+    <!-- Permissions & protection -->
+    <string name="permission_overlay_title">العرض فوق التطبيقات الأخرى</string>
+    <string name="permission_overlay_description">اسمح لـ AdamAppLock بالظهور في المقدمة ليعرض شاشة القفل فوق التطبيقات المحمية.</string>
+    <string name="permission_usage_title">الوصول إلى إحصائيات الاستخدام</string>
+    <string name="permission_usage_description">يتيح وصول الاستخدام لـ AdamAppLock معرفة التطبيق المفتوح ليحمي التطبيقات التي تختارها.</string>
+    <string name="permission_button_open">فتح الإعدادات</string>
+    <string name="permission_granted_label">تم منح الإذن</string>
+    <string name="permission_required_label">الإذن مطلوب</string>
+    <string name="permission_gate_title">فعّل الأذونات المطلوبة</string>
+    <string name="permission_gate_description">فعّل كلا الإذنين لبدء حماية تطبيقاتك. يتم حظر التنقل حتى منحها.</string>
+    <string name="permission_missing_toast">امنح إذن الظهور فوق التطبيقات الأخرى ووصول الاستخدام لتفعيل الحماية.</string>
+    <string name="protection_toggle_title">بدء الحماية</string>
+    <string name="protection_toggle_stop">إيقاف الحماية</string>
+    <string name="protection_toggle_description">اقفل التطبيقات المحددة باستخدام نافذة الظهور فوق التطبيقات والوصول إلى الاستخدام. يتطلب إشعارًا دائمًا.</string>
+    <string name="protection_status_running">الحماية مفعلة</string>
+    <string name="protection_status_stopped">الحماية متوقفة</string>
+    <string name="protection_status_pending_permissions">بانتظار الأذونات لتفعيل الحماية</string>
+    <string name="protection_status_permissions_missing">أذونات مفقودة - امنح الظهور والوصول إلى الاستخدام</string>
+    <string name="protection_status_summary">يراقب AdamAppLock تطبيقاتك المقفلة ويعرض النافذة عند فتح تطبيق محمي.</string>
+    <string name="protection_service_running">خدمة الحماية قيد التشغيل</string>
+    <string name="protection_service_not_running">خدمة الحماية متوقفة مؤقتًا</string>
+    <string name="protection_manage_in_settings">إدارة الحماية في الإعدادات</string>
+    <string name="protection_settings_title">تفعيل حماية الظهور فوق التطبيقات</string>
+    <string name="protection_settings_description">ابدأ أو أوقف نافذة القفل وإشعارها. يجب أن تبقى الأذونات مفعّلة لظهور النافذة بثبات.</string>
+    <string name="protection_notification_title">حماية التطبيق قيد التشغيل</string>
+    <string name="protection_notification_body">AdamAppLock يراقب التطبيقات المقفلة.</string>
+    <string name="protection_notification_channel">حماية التطبيق</string>
+    <string name="protection_notification_channel_description">يبقي خدمة الحماية تعمل لقفل التطبيقات التي تختارها.</string>
+    <string name="health_check_button">تشغيل فحص الحماية</string>
+    <string name="health_check_running">يتم تشغيل الفحص…</string>
+    <string name="health_check_passed">الفحص ناجح</string>
+    <string name="health_check_needs_attention">يتطلب الانتباه</string>
+    <string name="health_check_detail_overlay">إذن الظهور: %1$s</string>
+    <string name="health_check_detail_usage">وصول الاستخدام: %1$s</string>
+    <string name="health_check_detail_service">الخدمة قيد التشغيل: %1$s</string>
+    <string name="health_check_detail_overlay_draw">رسم النافذة: %1$s</string>
+    <string name="health_check_state_ok">متاح</string>
+    <string name="health_check_state_missing">مفقود</string>
 
     <!-- Misc -->
     <string name="version_unknown">غير معروف</string>

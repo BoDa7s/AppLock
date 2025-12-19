@@ -25,6 +25,7 @@
 
     <!-- Settings sections -->
     <string name="settings_section_security">Seguridad</string>
+    <string name="settings_section_protection">Protección</string>
     <string name="settings_section_lock_timers">Temporizadores de bloqueo</string>
     <string name="settings_section_language">Idioma de la aplicación</string>
     <string name="settings_section_theme">Tema</string>
@@ -89,6 +90,45 @@
     <string name="biometric_prompt_title">Desbloquear</string>
     <string name="biometric_prompt_subtitle">Usa la huella digital para desbloquear</string>
     <string name="biometric_prompt_use_passcode">Usar código</string>
+
+    <!-- Permissions & protection -->
+    <string name="permission_overlay_title">Mostrar sobre otras apps</string>
+    <string name="permission_overlay_description">Permite que AdamAppLock aparezca encima para mostrar la pantalla de bloqueo sobre las apps protegidas.</string>
+    <string name="permission_usage_title">Acceso de uso</string>
+    <string name="permission_usage_description">El acceso de uso permite a AdamAppLock detectar qué app está abierta para proteger las que elijas.</string>
+    <string name="permission_button_open">Abrir ajustes</string>
+    <string name="permission_granted_label">Permiso concedido</string>
+    <string name="permission_required_label">Permiso requerido</string>
+    <string name="permission_gate_title">Activa los permisos requeridos</string>
+    <string name="permission_gate_description">Habilita ambos permisos para empezar a proteger tus apps. La navegación está bloqueada hasta concederlos.</string>
+    <string name="permission_missing_toast">Concede superposición y acceso de uso para activar la protección.</string>
+    <string name="protection_toggle_title">Iniciar protección</string>
+    <string name="protection_toggle_stop">Detener protección</string>
+    <string name="protection_toggle_description">Bloquea las apps seleccionadas usando superposición y acceso de uso. Requiere una notificación persistente.</string>
+    <string name="protection_status_running">La protección está activa</string>
+    <string name="protection_status_stopped">La protección está desactivada</string>
+    <string name="protection_status_pending_permissions">Esperando permisos para activar la protección</string>
+    <string name="protection_status_permissions_missing">Faltan permisos: concede superposición y acceso de uso</string>
+    <string name="protection_status_summary">AdamAppLock vigila tus apps bloqueadas y muestra la superposición cuando se abre una app protegida.</string>
+    <string name="protection_service_running">El servicio de protección se está ejecutando</string>
+    <string name="protection_service_not_running">El servicio de protección está en pausa</string>
+    <string name="protection_manage_in_settings">Administrar protección en Ajustes</string>
+    <string name="protection_settings_title">Habilitar protección con superposición</string>
+    <string name="protection_settings_description">Inicia o detén la superposición de bloqueo y su notificación. Los permisos deben permanecer concedidos para que aparezca correctamente.</string>
+    <string name="protection_notification_title">Protección de apps en ejecución</string>
+    <string name="protection_notification_body">AdamAppLock está monitoreando las apps bloqueadas.</string>
+    <string name="protection_notification_channel">Protección de apps</string>
+    <string name="protection_notification_channel_description">Mantiene activo el servicio de protección para bloquear las apps seleccionadas.</string>
+    <string name="health_check_button">Ejecutar revisión de protección</string>
+    <string name="health_check_running">Ejecutando revisión…</string>
+    <string name="health_check_passed">Revisión superada</string>
+    <string name="health_check_needs_attention">Necesita atención</string>
+    <string name="health_check_detail_overlay">Permiso de superposición: %1$s</string>
+    <string name="health_check_detail_usage">Acceso de uso: %1$s</string>
+    <string name="health_check_detail_service">Servicio en ejecución: %1$s</string>
+    <string name="health_check_detail_overlay_draw">Renderizado de superposición: %1$s</string>
+    <string name="health_check_state_ok">OK</string>
+    <string name="health_check_state_missing">Falta</string>
 
     <!-- Misc -->
     <string name="version_unknown">Desconocido</string>

@@ -17,12 +17,15 @@ object Prefs {
     private const val KEY_LOCKED            = "locked_apps"
     private const val KEY_USE_BIOMETRIC     = "use_biometric"
     private const val KEY_LAST_UNLOCK       = "last_unlock"
+    private const val KEY_APP_UNLOCKED_AT   = "app_unlocked_at"
     private const val KEY_LAST_BACKGROUND   = "last_background"
+    private const val KEY_APP_LAST_BACKGROUND = "app_last_background"
     private const val KEY_SESSION_UNLOCKED  = "session_unlocked_pkg"
     private const val KEY_SESSION_UID       = "session_unlocked_uid"
     private const val KEY_LOCK_TIMER_MS     = "lock_timer_ms"
     private const val KEY_LOCK_ON_SCREEN_OFF = "lock_on_screen_off"
     private const val KEY_PROTECTION_ENABLED = "protection_enabled"
+    private const val KEY_HAPTICS_ENABLED    = "haptics_enabled"
 
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_LANGUAGE = "app_language"
@@ -59,6 +62,11 @@ object Prefs {
         }.apply()
     }
 
+    fun clearAll(ctx: Context) {
+        prefs(ctx).edit().clear().apply()
+        sp(ctx).edit().clear().apply()
+    }
+
     private fun sp(ctx: Context) =
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
@@ -76,6 +84,13 @@ object Prefs {
 
     fun setUseBiometric(ctx: Context, enabled: Boolean) {
         sp(ctx).edit { putBoolean(KEY_USE_BIOMETRIC, enabled) }
+    }
+
+    fun hapticsEnabled(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_HAPTICS_ENABLED, true)
+
+    fun setHapticsEnabled(ctx: Context, enabled: Boolean) {
+        sp(ctx).edit { putBoolean(KEY_HAPTICS_ENABLED, enabled) }
     }
 
     // -------- Locked apps --------
@@ -104,6 +119,17 @@ object Prefs {
     fun lastUnlock(ctx: Context): Long =
         sp(ctx).getLong(KEY_LAST_UNLOCK, 0L)
 
+    fun setAppLastUnlockNow(ctx: Context) {
+        sp(ctx).edit { putLong(KEY_APP_UNLOCKED_AT, System.currentTimeMillis()) }
+    }
+
+    fun clearAppUnlock(ctx: Context) {
+        sp(ctx).edit { remove(KEY_APP_UNLOCKED_AT) }
+    }
+
+    fun lastAppUnlock(ctx: Context): Long =
+        sp(ctx).getLong(KEY_APP_UNLOCKED_AT, 0L)
+
     fun setLastBackgroundNow(ctx: Context) {
         sp(ctx).edit { putLong(KEY_LAST_BACKGROUND, System.currentTimeMillis()) }
     }
@@ -114,6 +140,17 @@ object Prefs {
 
     fun lastBackground(ctx: Context): Long =
         sp(ctx).getLong(KEY_LAST_BACKGROUND, 0L)
+
+    fun setAppLastBackgroundNow(ctx: Context) {
+        sp(ctx).edit { putLong(KEY_APP_LAST_BACKGROUND, System.currentTimeMillis()) }
+    }
+
+    fun clearAppLastBackground(ctx: Context) {
+        sp(ctx).edit { remove(KEY_APP_LAST_BACKGROUND) }
+    }
+
+    fun lastAppBackground(ctx: Context): Long =
+        sp(ctx).getLong(KEY_APP_LAST_BACKGROUND, 0L)
 
     // -------- Foreground session (package + UID) --------
     // Store: current unlocked app package and its UID.
