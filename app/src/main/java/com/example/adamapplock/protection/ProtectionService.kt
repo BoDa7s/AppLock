@@ -291,14 +291,7 @@ class ProtectionService : Service() {
     }
 
     private fun buildNotification(): Notification {
-        val channelId = NOTIFICATION_CHANNEL
-        val mgr = getSystemService(NotificationManager::class.java)
-        val channel = NotificationChannel(
-            channelId,
-            getString(R.string.protection_notification_channel),
-            NotificationManager.IMPORTANCE_LOW
-        )
-        mgr?.createNotificationChannel(channel)
+        val channelId = ensureNotificationChannel()
 
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle(getString(R.string.protection_notification_title))
@@ -306,6 +299,37 @@ class ProtectionService : Service() {
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setOngoing(true)
             .build()
+    }
+
+    private fun ensureNotificationChannel(): String {
+        val channelId = NOTIFICATION_CHANNEL
+        val mgr = getSystemService(NotificationManager::class.java)
+        val desiredName = getString(R.string.protection_notification_channel)
+        val desiredDescription = getString(R.string.protection_notification_channel_description)
+
+        val existing = mgr?.getNotificationChannel(channelId)
+        if (existing != null) {
+            val needsRecreate = existing.name != desiredName
+            if (needsRecreate) {
+                mgr.deleteNotificationChannel(channelId)
+            } else {
+                if (existing.description != desiredDescription) {
+                    existing.description = desiredDescription
+                    mgr.createNotificationChannel(existing)
+                }
+                return channelId
+            }
+        }
+
+        val channel = NotificationChannel(
+            channelId,
+            desiredName,
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = desiredDescription
+        }
+        mgr?.createNotificationChannel(channel)
+        return channelId
     }
 
     companion object {

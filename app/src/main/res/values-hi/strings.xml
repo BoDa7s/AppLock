@@ -25,6 +25,7 @@
 
     <!-- Settings sections -->
     <string name="settings_section_security">सुरक्षा</string>
+    <string name="settings_section_protection">संरक्षण</string>
     <string name="settings_section_lock_timers">लॉक टाइमर</string>
     <string name="settings_section_language">ऐप भाषा</string>
     <string name="settings_section_theme">थीम</string>
@@ -89,6 +90,45 @@
     <string name="biometric_prompt_title">अनलॉक करें</string>
     <string name="biometric_prompt_subtitle">अनलॉक करने के लिए फ़िंगरप्रिंट उपयोग करें</string>
     <string name="biometric_prompt_use_passcode">पासकोड उपयोग करें</string>
+
+    <!-- Permissions & protection -->
+    <string name="permission_overlay_title">अन्य ऐप्स के ऊपर दिखाएँ</string>
+    <string name="permission_overlay_description">AdamAppLock को सामने दिखाने दें ताकि वह सुरक्षित ऐप्स के ऊपर लॉक स्क्रीन दिखा सके.</string>
+    <string name="permission_usage_title">उपयोग एक्सेस</string>
+    <string name="permission_usage_description">उपयोग एक्सेस से AdamAppLock पता लगा सकता है कि कौन-सा ऐप खुला है ताकि चुने हुए ऐप्स की रक्षा कर सके.</string>
+    <string name="permission_button_open">सेटिंग्स खोलें</string>
+    <string name="permission_granted_label">अनुमति दी गई</string>
+    <string name="permission_required_label">अनुमति आवश्यक</string>
+    <string name="permission_gate_title">जरूरी अनुमतियाँ चालू करें</string>
+    <string name="permission_gate_description">अपनी ऐप सुरक्षा शुरू करने के लिए दोनों अनुमतियाँ सक्षम करें। इन्हें मिलने तक नेविगेशन अवरुद्ध रहेगा.</string>
+    <string name="permission_missing_toast">सुरक्षा सक्षम करने के लिए ओवरले और उपयोग एक्सेस दें.</string>
+    <string name="protection_toggle_title">सुरक्षा शुरू करें</string>
+    <string name="protection_toggle_stop">सुरक्षा रोकें</string>
+    <string name="protection_toggle_description">चयनित ऐप्स को ओवरले और उपयोग एक्सेस से लॉक करें। एक स्थायी सूचना आवश्यक है.</string>
+    <string name="protection_status_running">सुरक्षा सक्रिय है</string>
+    <string name="protection_status_stopped">सुरक्षा बंद है</string>
+    <string name="protection_status_pending_permissions">सुरक्षा चालू करने के लिए अनुमतियों की प्रतीक्षा</string>
+    <string name="protection_status_permissions_missing">अनुमतियाँ अनुपस्थित \u2013 ओवरले और उपयोग एक्सेस दें</string>
+    <string name="protection_status_summary">AdamAppLock आपके लॉक किए ऐप्स पर नज़र रखता है और सुरक्षित ऐप खुलते ही ओवरले दिखाता है.</string>
+    <string name="protection_service_running">सुरक्षा सेवा चल रही है</string>
+    <string name="protection_service_not_running">सुरक्षा सेवा रुकी है</string>
+    <string name="protection_manage_in_settings">सेटिंग्स में सुरक्षा प्रबंधित करें</string>
+    <string name="protection_settings_title">ओवरले सुरक्षा सक्षम करें</string>
+    <string name="protection_settings_description">लॉक ओवरले और उसकी सूचना शुरू या बंद करें। ओवरले स्थिर रहने के लिए अनुमतियाँ दी रहनी चाहिए.</string>
+    <string name="protection_notification_title">ऐप सुरक्षा चल रही है</string>
+    <string name="protection_notification_body">AdamAppLock लॉक किए ऐप्स की निगरानी कर रहा है.</string>
+    <string name="protection_notification_channel">ऐप सुरक्षा</string>
+    <string name="protection_notification_channel_description">चयनित ऐप्स को लॉक करने के लिए सुरक्षा सेवा सक्रिय रखता है.</string>
+    <string name="health_check_button">सुरक्षा जांच चलाएँ</string>
+    <string name="health_check_running">जांच चल रही है...</string>
+    <string name="health_check_passed">जांच सफल</string>
+    <string name="health_check_needs_attention">ध्यान आवश्यक</string>
+    <string name="health_check_detail_overlay">ओवरले अनुमति: %1$s</string>
+    <string name="health_check_detail_usage">उपयोग एक्सेस: %1$s</string>
+    <string name="health_check_detail_service">सेवा चल रही है: %1$s</string>
+    <string name="health_check_detail_overlay_draw">ओवरले रेंडरिंग: %1$s</string>
+    <string name="health_check_state_ok">ठीक</string>
+    <string name="health_check_state_missing">अनुपस्थित</string>
 
     <!-- Misc -->
     <string name="version_unknown">अज्ञात</string>

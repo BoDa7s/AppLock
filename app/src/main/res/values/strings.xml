@@ -99,6 +99,7 @@
     <string name="permission_usage_description">Usage access lets AdamAppLock detect which app is open so it can guard the ones you select.</string>
     <string name="permission_button_open">Open settings</string>
     <string name="permission_granted_label">Permission granted</string>
+    <string name="permission_required_label">Permission required</string>
     <string name="permission_gate_title">Turn on required permissions</string>
     <string name="permission_gate_description">Enable both permissions to start protecting your apps. Navigation is blocked until they are granted.</string>
     <string name="permission_missing_toast">Grant overlay and usage access to enable protection.</string>
@@ -118,6 +119,7 @@
     <string name="protection_notification_title">App protection running</string>
     <string name="protection_notification_body">AdamAppLock is monitoring locked apps.</string>
     <string name="protection_notification_channel">App Protection</string>
+    <string name="protection_notification_channel_description">Keeps the protection service running to lock selected apps.</string>
     <string name="health_check_button">Run protection health check</string>
     <string name="health_check_running">Running health check\u2026</string>
     <string name="health_check_passed">Health check passed</string>

@@ -46,8 +46,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ScreenLockRotation
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
@@ -124,6 +126,30 @@ class MainActivity : AppCompatActivity() {
                         val cs = MaterialTheme.colorScheme
                         val appListViewModel: AppListViewModel = viewModel()
                         val protectionViewModel: ProtectionViewModel = viewModel()
+                        val protectionState by protectionViewModel.uiState.collectAsState()
+                        val permissions = protectionState.permissions
+                        val overlaySettingsIntent = remember(ctx.packageName) {
+                            {
+                                val intent = Intent(
+                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    Uri.parse("package:${ctx.packageName}")
+                                )
+                                ctx.startActivity(intent)
+                            }
+                        }
+                        val usageSettingsIntent = remember {
+                            { ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
+                        }
+
+                        if (!permissions.ready) {
+                            BackHandler(enabled = true) {}
+                            PermissionGate(
+                                permissions = permissions,
+                                onRequestOverlay = overlaySettingsIntent,
+                                onRequestUsage = usageSettingsIntent
+                            )
+                            return@AdamAppLockTheme
+                        }
 
                         Column(
                             Modifier.fillMaxSize()
@@ -145,6 +171,9 @@ class MainActivity : AppCompatActivity() {
                                 0 -> AppSelectionScreen(
                                     appListViewModel = appListViewModel,
                                     protectionViewModel = protectionViewModel,
+                                    protectionState = protectionState,
+                                    onRequestOverlay = overlaySettingsIntent,
+                                    onRequestUsage = usageSettingsIntent,
                                     onOpenSettings = { selectedTab = 1 }
                                 )
                                 1 -> SettingsScreen(
@@ -624,12 +653,14 @@ private enum class AppSelectionSegment(@StringRes val labelRes: Int) {
 private fun AppSelectionScreen(
     appListViewModel: AppListViewModel,
     protectionViewModel: ProtectionViewModel,
+    protectionState: ProtectionUiState,
+    onRequestOverlay: () -> Unit,
+    onRequestUsage: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     val ctx = LocalContext.current
     val cs = MaterialTheme.colorScheme
     val uiState by appListViewModel.uiState.collectAsState()
-    val protectionState by protectionViewModel.uiState.collectAsState()
     val permissions = protectionState.permissions
     val readyForProtection = permissions.ready
 
@@ -682,26 +713,6 @@ private fun AppSelectionScreen(
         protectionViewModel.refreshServiceState()
     }
 
-    val openOverlaySettings = remember(ctx.packageName) {
-        {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:${ctx.packageName}")
-            )
-            ctx.startActivity(intent)
-        }
-    }
-    val openUsageSettings = remember { { ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) } }
-
-    if (permissions.missingBoth) {
-        PermissionGate(
-            permissions = permissions,
-            onRequestOverlay = openOverlaySettings,
-            onRequestUsage = openUsageSettings
-        )
-        return
-    }
-
     Box(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
@@ -739,8 +750,8 @@ private fun AppSelectionScreen(
             item {
                 PermissionRequestList(
                     permissions = permissions,
-                    onRequestOverlay = openOverlaySettings,
-                    onRequestUsage = openUsageSettings
+                    onRequestOverlay = onRequestOverlay,
+                    onRequestUsage = onRequestUsage
                 )
                 Spacer(Modifier.height(12.dp))
             }
@@ -884,28 +895,27 @@ private fun PermissionRequestList(
     permissions: PermissionSnapshot,
     onRequestOverlay: () -> Unit,
     onRequestUsage: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showGranted: Boolean = false
 ) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        if (!permissions.overlayGranted) {
-            PermissionRequestCard(
-                title = stringResource(R.string.permission_overlay_title),
-                description = stringResource(R.string.permission_overlay_description),
-                granted = false,
-                onClick = onRequestOverlay
-            )
-        }
-        if (!permissions.usageGranted) {
-            PermissionRequestCard(
-                title = stringResource(R.string.permission_usage_title),
-                description = stringResource(R.string.permission_usage_description),
-                granted = false,
-                onClick = onRequestUsage
-            )
-        }
+        PermissionRequestCard(
+            title = stringResource(R.string.permission_overlay_title),
+            description = stringResource(R.string.permission_overlay_description),
+            granted = permissions.overlayGranted,
+            onClick = onRequestOverlay,
+            showWhenGranted = showGranted
+        )
+        PermissionRequestCard(
+            title = stringResource(R.string.permission_usage_title),
+            description = stringResource(R.string.permission_usage_description),
+            granted = permissions.usageGranted,
+            onClick = onRequestUsage,
+            showWhenGranted = showGranted
+        )
     }
 }
 
@@ -914,9 +924,19 @@ private fun PermissionRequestCard(
     title: String,
     description: String,
     granted: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    showWhenGranted: Boolean = false
 ) {
+    if (granted && !showWhenGranted) return
+
     val cs = MaterialTheme.colorScheme
+    val statusText = if (granted) {
+        stringResource(R.string.permission_granted_label)
+    } else {
+        stringResource(R.string.permission_required_label)
+    }
+    val statusColor = if (granted) cs.tertiary else cs.error
+    val statusIcon = if (granted) Icons.Outlined.CheckCircle else Icons.Outlined.WarningAmber
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large
@@ -929,9 +949,18 @@ private fun PermissionRequestCard(
         ) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = cs.onSurface)
             Text(description, color = cs.onSurfaceVariant)
-            if (granted) {
-                Text(text = stringResource(R.string.permission_granted_label), color = cs.tertiary)
-            } else {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = statusIcon,
+                    contentDescription = null,
+                    tint = statusColor
+                )
+                Text(text = statusText, color = statusColor)
+            }
+            if (!granted) {
                 Button(onClick = onClick, modifier = Modifier.align(Alignment.End)) {
                     Text(stringResource(R.string.permission_button_open))
                 }
@@ -1013,7 +1042,8 @@ private fun PermissionGate(
         PermissionRequestList(
             permissions = permissions,
             onRequestOverlay = onRequestOverlay,
-            onRequestUsage = onRequestUsage
+            onRequestUsage = onRequestUsage,
+            showGranted = true
         )
     }
 }
