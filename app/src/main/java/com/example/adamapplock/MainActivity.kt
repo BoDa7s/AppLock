@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import com.example.adamapplock.PermissionEscortManager.PermissionEscortType
 import com.example.adamapplock.ui.theme.AdamAppLockTheme
 import com.example.adamapplock.ui.theme.ThemeMode
 import android.content.Context
@@ -108,9 +109,13 @@ private enum class AppLockGateState { Loading, Locked, Unlocked }
 
 class MainActivity : AppCompatActivity() {
 
+    private val escortEvents = MutableStateFlow<PermissionEscortType?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         LocaleManager.applyStoredLocale(this)
         super.onCreate(savedInstanceState)
+        PermissionEscortManager.ensureMonitoring(this)
+        captureEscortIntent(intent)
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -118,6 +123,8 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val ctx = LocalContext.current
             val repo = remember { PasswordRepository.get(ctx) }
+            val protectionViewModel: ProtectionViewModel = viewModel()
+            val escortSignal by escortEvents.collectAsState()
 
             // null = loading; true = needs setup; false = ready
             var needsSetup by remember { mutableStateOf<Boolean?>(null) }
@@ -155,6 +162,13 @@ class MainActivity : AppCompatActivity() {
             // App-wide theme state
             var themeMode by remember { mutableStateOf(Prefs.getThemeMode(ctx)) }
             var useBiometric by remember { mutableStateOf(Prefs.useBiometric(ctx)) }
+
+            LaunchedEffect(escortSignal) {
+                if (escortSignal != null) {
+                    protectionViewModel.refreshPermissions(log = true)
+                    escortEvents.value = null
+                }
+            }
 
             AdamAppLockTheme(themeMode = themeMode) {
 
@@ -226,11 +240,11 @@ class MainActivity : AppCompatActivity() {
                         val tabs = listOf(R.string.tab_main, R.string.tab_settings)
                         val cs = MaterialTheme.colorScheme
                         val appListViewModel: AppListViewModel = viewModel()
-                        val protectionViewModel: ProtectionViewModel = viewModel()
                         val protectionState by protectionViewModel.uiState.collectAsState()
                         val permissions = protectionState.permissions
                         val overlaySettingsIntent = remember(ctx.packageName) {
                             {
+                                PermissionEscortManager.beginSession(ctx, PermissionEscortType.Overlay)
                                 val intent = Intent(
                                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                     Uri.parse("package:${ctx.packageName}")
@@ -239,11 +253,14 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                         val usageSettingsIntent = remember {
-                            { ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
+                            {
+                                PermissionEscortManager.beginSession(ctx, PermissionEscortType.Usage)
+                                ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                            }
                         }
 
                         if (!permissions.ready) {
-                            BackHandler(enabled = true) {}
+                            BackHandler(enabled = true) { activity.finish() }
                             PermissionGate(
                                 permissions = permissions,
                                 onRequestOverlay = overlaySettingsIntent,
@@ -294,6 +311,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        captureEscortIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        PermissionEscortManager.onAppResumed(this)
+    }
+
+    private fun captureEscortIntent(intent: Intent?) {
+        val fromEscort = intent?.getBooleanExtra(PermissionEscortManager.EXTRA_FROM_PERMISSION_ESCORT, false) == true
+        if (fromEscort) {
+            val type = intent.getStringExtra(PermissionEscortManager.EXTRA_PERMISSION_ESCORT_TYPE)
+                ?.let { runCatching { PermissionEscortType.valueOf(it) }.getOrNull() }
+            escortEvents.value = type
+        }
     }
 }
 
@@ -1177,7 +1213,7 @@ private fun PermissionGate(
             permissions = permissions,
             onRequestOverlay = onRequestOverlay,
             onRequestUsage = onRequestUsage,
-            showGranted = true
+            showGranted = false
         )
     }
 }

@@ -49,5 +49,11 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
+        <!-- Lightweight foreground monitor that watches for permission grants -->
+        <service
+            android:name=".PermissionEscortService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
     </application>
 </manifest>

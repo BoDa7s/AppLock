@@ -118,6 +118,14 @@
     <string name="protection_manage_in_settings">Manage protection in Settings</string>
     <string name="protection_settings_title">Enable overlay protection</string>
     <string name="protection_settings_description">Start or stop the lock overlay and its notification. Permissions must stay granted for the overlay to appear reliably.</string>
+    <string name="permission_escort_channel_name">Permission escort</string>
+    <string name="permission_escort_channel_description">Keeps AdamAppLock nearby while you grant permissions.</string>
+    <string name="permission_escort_monitor_title">Waiting for permission</string>
+    <string name="permission_escort_monitor_body">Return to AdamAppLock after granting access.</string>
+    <string name="permission_escort_granted_title">Permission granted</string>
+    <string name="permission_escort_granted_body">Returning to AdamAppLock to continue.</string>
+    <string name="permission_escort_timeout_title">Still need permission</string>
+    <string name="permission_escort_timeout_body">Tap to finish enabling AdamAppLock.</string>
     <string name="protection_notification_title">App protection running</string>
     <string name="protection_notification_body">AdamAppLock is monitoring locked apps.</string>
     <string name="protection_notification_channel">App Protection</string>

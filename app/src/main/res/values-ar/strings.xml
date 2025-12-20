@@ -115,6 +115,14 @@
     <string name="protection_manage_in_settings">إدارة الحماية في الإعدادات</string>
     <string name="protection_settings_title">تفعيل حماية الظهور فوق التطبيقات</string>
     <string name="protection_settings_description">ابدأ أو أوقف نافذة القفل وإشعارها. يجب أن تبقى الأذونات مفعّلة لظهور النافذة بثبات.</string>
+    <string name="permission_escort_channel_name">مرافقة الإذن</string>
+    <string name="permission_escort_channel_description">إبقاء AdamAppLock قريبًا أثناء منح الأذونات.</string>
+    <string name="permission_escort_monitor_title">في انتظار الإذن</string>
+    <string name="permission_escort_monitor_body">ارجع إلى AdamAppLock بعد منح الإذن.</string>
+    <string name="permission_escort_granted_title">تم منح الإذن</string>
+    <string name="permission_escort_granted_body">جارٍ العودة إلى AdamAppLock للمتابعة.</string>
+    <string name="permission_escort_timeout_title">ما زلنا بحاجة إلى الإذن</string>
+    <string name="permission_escort_timeout_body">انقر للعودة وإنهاء الإعداد.</string>
     <string name="protection_notification_title">حماية التطبيق قيد التشغيل</string>
     <string name="protection_notification_body">AdamAppLock يراقب التطبيقات المقفلة.</string>
     <string name="protection_notification_channel">حماية التطبيق</string>

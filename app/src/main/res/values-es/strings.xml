@@ -115,6 +115,14 @@
     <string name="protection_manage_in_settings">Administrar protección en Ajustes</string>
     <string name="protection_settings_title">Habilitar protección con superposición</string>
     <string name="protection_settings_description">Inicia o detén la superposición de bloqueo y su notificación. Los permisos deben permanecer concedidos para que aparezca correctamente.</string>
+    <string name="permission_escort_channel_name">Escolta de permisos</string>
+    <string name="permission_escort_channel_description">Mantiene AdamAppLock cerca mientras concedes permisos.</string>
+    <string name="permission_escort_monitor_title">Esperando el permiso</string>
+    <string name="permission_escort_monitor_body">Vuelve a AdamAppLock después de conceder el acceso.</string>
+    <string name="permission_escort_granted_title">Permiso concedido</string>
+    <string name="permission_escort_granted_body">Regresando a AdamAppLock para continuar.</string>
+    <string name="permission_escort_timeout_title">Aún falta el permiso</string>
+    <string name="permission_escort_timeout_body">Toca para volver y terminar la activación.</string>
     <string name="protection_notification_title">Protección de apps en ejecución</string>
     <string name="protection_notification_body">AdamAppLock está monitoreando las apps bloqueadas.</string>
     <string name="protection_notification_channel">Protección de apps</string>

@@ -115,6 +115,14 @@
     <string name="protection_manage_in_settings">सेटिंग्स में सुरक्षा प्रबंधित करें</string>
     <string name="protection_settings_title">ओवरले सुरक्षा सक्षम करें</string>
     <string name="protection_settings_description">लॉक ओवरले और उसकी सूचना शुरू या बंद करें। ओवरले स्थिर रहने के लिए अनुमतियाँ दी रहनी चाहिए.</string>
+    <string name="permission_escort_channel_name">अनुमति एस्कॉर्ट</string>
+    <string name="permission_escort_channel_description">अनुमतियाँ देते समय AdamAppLock को पास रखता है।</string>
+    <string name="permission_escort_monitor_title">अनुमति की प्रतीक्षा</string>
+    <string name="permission_escort_monitor_body">अनुमति देने के बाद AdamAppLock पर लौटें।</string>
+    <string name="permission_escort_granted_title">अनुमति स्वीकृत</string>
+    <string name="permission_escort_granted_body">जारी रखने के लिए AdamAppLock पर लौट रहे हैं।</string>
+    <string name="permission_escort_timeout_title">अब भी अनुमति चाहिए</string>
+    <string name="permission_escort_timeout_body">वापस आकर सेटअप पूरा करने के लिए टैप करें।</string>
     <string name="protection_notification_title">ऐप सुरक्षा चल रही है</string>
     <string name="protection_notification_body">AdamAppLock लॉक किए ऐप्स की निगरानी कर रहा है.</string>
     <string name="protection_notification_channel">ऐप सुरक्षा</string>
