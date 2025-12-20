@@ -117,8 +117,8 @@
     <string name="protection_settings_description">Démarrez ou arrêtez la superposition de verrouillage et sa notification. Les autorisations doivent rester accordées pour que la superposition s\'affiche correctement.</string>
     <string name="permission_escort_channel_name">Accompagnement des autorisations</string>
     <string name="permission_escort_channel_description">Garde AdamAppLock à portée pendant l’octroi des autorisations.</string>
-    <string name="permission_escort_monitor_title">En attente de l'autorisation</string>
-    <string name="permission_escort_monitor_body">Revenez à AdamAppLock après avoir accordé l'accès.</string>
+    <string name="permission_escort_monitor_title">En attente de l\'autorisation</string>
+    <string name="permission_escort_monitor_body">Revenez à AdamAppLock après avoir accordé l\'accès.</string>
     <string name="permission_escort_granted_title">Autorisation accordée</string>
     <string name="permission_escort_granted_body">Retour à AdamAppLock pour continuer.</string>
     <string name="permission_escort_timeout_title">Autorisation encore requise</string>
