@@ -3,7 +3,10 @@ package com.example.adamapplock.protection
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.viewModelScope
 import com.example.adamapplock.PermissionUtils
 import com.example.adamapplock.Prefs
@@ -23,7 +26,7 @@ data class ProtectionUiState(
     val healthCheckInProgress: Boolean = false
 )
 
-class ProtectionViewModel(application: Application) : AndroidViewModel(application) {
+class ProtectionViewModel(application: Application) : AndroidViewModel(application), DefaultLifecycleObserver {
 
     private val appContext: Context = application.applicationContext
     private val _uiState = MutableStateFlow(
@@ -37,14 +40,28 @@ class ProtectionViewModel(application: Application) : AndroidViewModel(applicati
 
     private var lastPermissions: PermissionSnapshot = _uiState.value.permissions
 
+    private var appInForeground: Boolean = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)
+
     init {
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         refreshPermissions(log = true)
         viewModelScope.launch {
             while (isActive) {
-                refreshPermissions()
-                delay(2_000)
+                if (!appInForeground) {
+                    refreshPermissions()
+                }
+                delay(5_000)
             }
         }
+    }
+
+    override fun onStart(owner: LifecycleOwner) {
+        appInForeground = true
+        refreshPermissions(log = true)
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        appInForeground = false
     }
 
     fun refreshPermissions(log: Boolean = false) {
@@ -138,6 +155,11 @@ class ProtectionViewModel(application: Application) : AndroidViewModel(applicati
             Log.i(TAG, "Protection toggle is on but service not running; restarting.")
             startProtection()
         }
+    }
+
+    override fun onCleared() {
+        ProcessLifecycleOwner.get().lifecycle.removeObserver(this)
+        super.onCleared()
     }
 
     companion object {

@@ -21,6 +21,7 @@ object Prefs {
     private const val KEY_LAST_BACKGROUND   = "last_background"
     private const val KEY_APP_LAST_BACKGROUND = "app_last_background"
     private const val KEY_APP_SESSION_UNLOCKED = "app_session_unlocked"
+    private const val KEY_APP_SESSION_TOKEN = "app_session_token"
     private const val KEY_SESSION_UNLOCKED  = "session_unlocked_pkg"
     private const val KEY_SESSION_UID       = "session_unlocked_uid"
     private const val KEY_LOCK_TIMER_MS     = "lock_timer_ms"
@@ -138,6 +139,19 @@ object Prefs {
 
     fun isAppSessionUnlocked(ctx: Context): Boolean =
         sp(ctx).getBoolean(KEY_APP_SESSION_UNLOCKED, false)
+
+    fun setAppSessionToken(ctx: Context, token: String?) {
+        sp(ctx).edit {
+            if (token.isNullOrBlank()) {
+                remove(KEY_APP_SESSION_TOKEN)
+            } else {
+                putString(KEY_APP_SESSION_TOKEN, token)
+            }
+        }
+    }
+
+    fun getAppSessionToken(ctx: Context): String? =
+        sp(ctx).getString(KEY_APP_SESSION_TOKEN, null)
 
     fun lastAppUnlock(ctx: Context): Long =
         sp(ctx).getLong(KEY_APP_UNLOCKED_AT, 0L)

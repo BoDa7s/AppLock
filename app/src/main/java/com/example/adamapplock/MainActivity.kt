@@ -144,12 +144,6 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
 
-                            androidx.lifecycle.Lifecycle.Event.ON_PAUSE,
-                            androidx.lifecycle.Lifecycle.Event.ON_STOP -> {
-                                AppLockManager.markBackground(ctx)
-                                lockState = AppLockGateState.Locked
-                            }
-
                             else -> {}
                         }
                     }
