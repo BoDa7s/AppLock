@@ -1,0 +1,51 @@
+:root{
+  --brand: #4f7cff;
+  --brand-2: #7aa2ff;
+  --bg-card: color-mix(in srgb, var(--brand) 6%, Canvas);
+  --text-muted: color-mix(in srgb, currentColor 60%, transparent);
+}
+html, body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+/* Header tweaks */
+.site-header { border-bottom: none; }
+.site-title { font-weight: 700; letter-spacing: .2px; }
+
+/* Hero */
+.hero{
+  margin-block: 2.5rem 2rem;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border-radius: 20px;
+  background:
+   radial-gradient(1200px 600px at 0% 0%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%),
+   radial-gradient(1000px 500px at 100% 0%, color-mix(in srgb, var(--brand-2) 14%, transparent), transparent 60%),
+   var(--bg-card);
+  border: 1px solid color-mix(in srgb, var(--brand) 20%, #0000);
+}
+.hero h1{ margin: 0 0 .25rem; font-size: clamp(2rem, 4vw, 2.6rem); }
+.hero p{ margin: .25rem 0 1.25rem; color: var(--text-muted); font-size: 1.05rem; }
+
+/* Buttons */
+.btn{
+  display:inline-block; padding:.8rem 1.1rem; border-radius:12px;
+  font-weight:600; text-decoration:none; line-height:1; border:1px solid transparent;
+}
+.btn.primary{ background: var(--brand); color: white; }
+.btn.secondary{ background: transparent; color: var(--brand); border-color: var(--brand); }
+.btn + .btn{ margin-left:.6rem; }
+
+/* Cards grid */
+.card-grid{
+  display:grid; gap:1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+  margin-block: 1.5rem 2.5rem;
+}
+.card{
+  padding:1rem 1.1rem; border-radius:16px;
+  background: var(--bg-card);
+  border:1px solid color-mix(in srgb, currentColor 8%, transparent);
+}
+.card h3{ margin:.2rem 0 .4rem; font-size:1.05rem; }
+.card p{ margin:0; color: var(--text-muted); }
+
+/* Footer */
+.site-footer{ border-top: none; color: var(--text-muted); }
