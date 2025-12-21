@@ -57,6 +57,7 @@
     <string name="language_hindi">Hindi</string>
     <string name="settings_language_label">App language</string>
     <string name="settings_language_use_device">Use device</string>
+    <string name="lock_timer_label">Lock timer</string>
     <string name="settings_theme_label">Theme</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
@@ -78,6 +79,7 @@
     <string name="lock_timer_5_minutes_description">Keep apps unlocked for 5 minutes of inactivity before requiring the passcode or biometric again.</string>
     <string name="lock_timer_10_minutes_title">After 10 minutes</string>
     <string name="lock_timer_10_minutes_description">Keep apps unlocked for 10 minutes of inactivity before requiring the passcode or biometric again.</string>
+    <string name="lock_immediately">Lock immediately</string>
 
     <!-- App selection -->
     <string name="segment_unlocked">Unlocked</string>

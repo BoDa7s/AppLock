@@ -48,6 +48,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.semantics.semantics
 import com.example.adamapplock.security.PasswordRepository
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -316,7 +317,8 @@ class MainActivity : AppCompatActivity() {
                                     onBiometricToggle = { enabled ->
                                         useBiometric = enabled
                                         Prefs.setUseBiometric(ctx, enabled)
-                                    }
+                                    },
+                                    onChangePasscode = { ChangePasswordRow() }
                                 )
                             }
                         }
@@ -542,7 +544,6 @@ private val lockTimerOptions = listOf(
     )
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -550,7 +551,8 @@ fun SettingsScreen(
     onThemeChange: (ThemeMode) -> Unit,
     protectionViewModel: ProtectionViewModel,
     useBiometric: Boolean,
-    onBiometricToggle: (Boolean) -> Unit
+    onBiometricToggle: (Boolean) -> Unit,
+    onChangePasscode: @Composable () -> Unit
 ) {
     BackHandler { onBack() }
 
@@ -694,7 +696,7 @@ fun SettingsScreen(
                     protectionViewModel.setProtectionEnabled(enabled)
                 }
             },
-            onChangePasscode = { ChangePasswordRow() },
+            onChangePasscode = onChangePasscode,
             onRequestOverlay = overlaySettingsIntent,
             onRequestUsage = usageSettingsIntent,
             onRequestBattery = batterySettingsIntent,
@@ -824,6 +826,7 @@ private fun SettingsTopBar(@StringRes title: Int, onBack: () -> Unit) {
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun ProtectionSettingsScreen(
     onBack: () -> Unit,
     state: ProtectionUiState,
@@ -834,7 +837,8 @@ private fun ProtectionSettingsScreen(
     onRequestBattery: () -> Unit,
     useBiometric: Boolean,
     onBiometricToggle: (Boolean) -> Unit,
-    onNavigatePermissions: () -> Unit
+    onNavigatePermissions: () -> Unit,
+    onChangePasscode: @Composable () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
     val statusLabel = if (state.protectionEnabled && permissions.ready) {
@@ -932,7 +936,7 @@ private fun ProtectionSettingsScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        ChangePasswordRow()
+                        onChangePasscode()
                         HorizontalDivider(color = cs.outlineVariant)
                         SettingToggleRow(
                             icon = Icons.Outlined.Fingerprint,
@@ -948,6 +952,7 @@ private fun ProtectionSettingsScreen(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun LockBehaviorSettingsScreen(
     onBack: () -> Unit,
     ctx: Context
@@ -1039,6 +1044,7 @@ private fun LockBehaviorSettingsScreen(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun PermissionsSettingsScreen(
     onBack: () -> Unit,
     permissions: PermissionSnapshot,
@@ -1140,6 +1146,7 @@ private fun PermissionsSettingsScreen(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun SystemSettingsScreen(
     onBack: () -> Unit,
     ctx: Context,
@@ -1150,9 +1157,7 @@ private fun SystemSettingsScreen(
     var languageExpanded by remember { mutableStateOf(false) }
     var selectedLanguageTag by remember { mutableStateOf(Prefs.getLanguageCode(ctx)) }
     val languageOptions = remember { LocaleManager.supportedLanguages }
-    val selectedLanguageOption = remember(selectedLanguageTag) {
-        LocaleManager.findOption(selectedLanguageTag)
-    }
+    val selectedLanguageOption = remember(selectedLanguageTag) { LocaleManager.findOption(selectedLanguageTag) }
 
     Scaffold(topBar = { SettingsTopBar(R.string.settings_card_system_title, onBack) }) { padding ->
         LazyColumn(
@@ -1176,7 +1181,7 @@ private fun SystemSettingsScreen(
                         Text(stringResource(R.string.settings_card_system_subtitle), color = cs.onSurfaceVariant)
                         ExposedDropdownMenuBox(expanded = languageExpanded, onExpandedChange = { languageExpanded = it }) {
                             OutlinedTextField(
-                                value = selectedLanguageOption?.displayName ?: stringResource(R.string.settings_language_use_device),
+                                value = stringResource(selectedLanguageOption.labelRes),
                                 onValueChange = {},
                                 readOnly = true,
                                 leadingIcon = { Icon(Icons.Rounded.Language, contentDescription = null) },
@@ -1198,11 +1203,11 @@ private fun SystemSettingsScreen(
                             ExposedDropdownMenu(expanded = languageExpanded, onDismissRequest = { languageExpanded = false }) {
                                 languageOptions.forEach { option ->
                                     DropdownMenuItem(
-                                        text = { Text(option.displayName) },
+                                        text = { Text(stringResource(option.labelRes)) },
                                         onClick = {
                                             selectedLanguageTag = option.tag
                                             Prefs.setLanguageCode(ctx, option.tag)
-                                            LocaleManager.applyLanguage(option.tag)
+                                            LocaleManager.setAppLanguage(ctx, option.tag)
                                             languageExpanded = false
                                         },
                                         trailingIcon = {
@@ -1220,11 +1225,17 @@ private fun SystemSettingsScreen(
                             ThemeMode.entries.forEach { mode ->
                                 SettingToggleRow(
                                     icon = when (mode) {
-                                        ThemeMode.System -> Icons.Rounded.SettingsSuggest
-                                        ThemeMode.Light -> Icons.Rounded.LightMode
-                                        ThemeMode.Dark -> Icons.Rounded.DarkMode
+                                        ThemeMode.SYSTEM -> Icons.Rounded.SettingsSuggest
+                                        ThemeMode.LIGHT -> Icons.Rounded.LightMode
+                                        ThemeMode.DARK -> Icons.Rounded.DarkMode
                                     },
-                                    title = stringResource(mode.labelRes),
+                                    title = stringResource(
+                                        when (mode) {
+                                            ThemeMode.SYSTEM -> R.string.theme_system
+                                            ThemeMode.LIGHT -> R.string.theme_light
+                                            ThemeMode.DARK -> R.string.theme_dark
+                                        }
+                                    ),
                                     checked = themeMode == mode,
                                     onCheckedChange = { onThemeChange(mode) },
                                     showSwitch = false,
@@ -1393,11 +1404,12 @@ private fun PermissionStatusRow(
     title: String,
     statusLabel: String,
     statusColor: Color,
-    onAction: () -> Unit
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val cs = MaterialTheme.colorScheme
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(icon, contentDescription = null, tint = cs.primary)
