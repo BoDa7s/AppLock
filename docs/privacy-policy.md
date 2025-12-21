@@ -40,5 +40,7 @@ These permissions are used **only** for protection features and local checks. Th
 ## Changes to this policy
 We may update this policy for clarity or new features. When we do, we’ll update the **Effective date** above and publish changes on this page.
 
-## Contact
-Questions? Open an issue on GitHub: **https://github.com/BoDa7s/AppLock/issues**
+## Contact & support
+_Questions?_ Open an issue on 
+**<a href="https://github.com/BoDa7s/AppLock/issues" target="_blank" rel="noopener">GitHub</a>**.
+
