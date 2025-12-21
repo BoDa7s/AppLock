@@ -20,12 +20,18 @@ object Prefs {
     private const val KEY_APP_UNLOCKED_AT   = "app_unlocked_at"
     private const val KEY_LAST_BACKGROUND   = "last_background"
     private const val KEY_APP_LAST_BACKGROUND = "app_last_background"
+    private const val KEY_APP_SESSION_UNLOCKED = "app_session_unlocked"
+    private const val KEY_APP_SESSION_TOKEN = "app_session_token"
     private const val KEY_SESSION_UNLOCKED  = "session_unlocked_pkg"
     private const val KEY_SESSION_UID       = "session_unlocked_uid"
     private const val KEY_LOCK_TIMER_MS     = "lock_timer_ms"
     private const val KEY_LOCK_ON_SCREEN_OFF = "lock_on_screen_off"
     private const val KEY_PROTECTION_ENABLED = "protection_enabled"
     private const val KEY_HAPTICS_ENABLED    = "haptics_enabled"
+
+    private const val KEY_PERMISSION_ESCORT_TYPE = "permission_escort_type"
+    private const val KEY_PERMISSION_ESCORT_STARTED_AT = "permission_escort_started_at"
+    private const val KEY_PERMISSION_ESCORT_EXPECTING = "permission_escort_expecting"
 
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_LANGUAGE = "app_language"
@@ -127,6 +133,30 @@ object Prefs {
         sp(ctx).edit { remove(KEY_APP_UNLOCKED_AT) }
     }
 
+    fun setAppSessionUnlocked(ctx: Context, unlocked: Boolean) {
+        sp(ctx).edit { putBoolean(KEY_APP_SESSION_UNLOCKED, unlocked) }
+    }
+
+    fun clearAppSession(ctx: Context) {
+        sp(ctx).edit { remove(KEY_APP_SESSION_UNLOCKED) }
+    }
+
+    fun isAppSessionUnlocked(ctx: Context): Boolean =
+        sp(ctx).getBoolean(KEY_APP_SESSION_UNLOCKED, false)
+
+    fun setAppSessionToken(ctx: Context, token: String?) {
+        sp(ctx).edit {
+            if (token.isNullOrBlank()) {
+                remove(KEY_APP_SESSION_TOKEN)
+            } else {
+                putString(KEY_APP_SESSION_TOKEN, token)
+            }
+        }
+    }
+
+    fun getAppSessionToken(ctx: Context): String? =
+        sp(ctx).getString(KEY_APP_SESSION_TOKEN, null)
+
     fun lastAppUnlock(ctx: Context): Long =
         sp(ctx).getLong(KEY_APP_UNLOCKED_AT, 0L)
 
@@ -206,6 +236,34 @@ object Prefs {
 
     fun setProtectionEnabled(ctx: Context, enabled: Boolean) {
         sp(ctx).edit { putBoolean(KEY_PROTECTION_ENABLED, enabled) }
+    }
+
+    fun setPermissionEscortSession(
+        ctx: Context,
+        type: String?,
+        startedAt: Long?,
+        expectingGrant: Boolean
+    ) {
+        sp(ctx).edit {
+            if (type == null || startedAt == null) {
+                remove(KEY_PERMISSION_ESCORT_TYPE)
+                remove(KEY_PERMISSION_ESCORT_STARTED_AT)
+                remove(KEY_PERMISSION_ESCORT_EXPECTING)
+            } else {
+                putString(KEY_PERMISSION_ESCORT_TYPE, type)
+                putLong(KEY_PERMISSION_ESCORT_STARTED_AT, startedAt)
+                putBoolean(KEY_PERMISSION_ESCORT_EXPECTING, expectingGrant)
+            }
+        }
+    }
+
+    fun getPermissionEscortSession(ctx: Context): Triple<String, Long, Boolean>? {
+        val prefs = sp(ctx)
+        val type = prefs.getString(KEY_PERMISSION_ESCORT_TYPE, null) ?: return null
+        val startedAt = prefs.getLong(KEY_PERMISSION_ESCORT_STARTED_AT, -1L)
+        if (startedAt <= 0L) return null
+        val expecting = prefs.getBoolean(KEY_PERMISSION_ESCORT_EXPECTING, false)
+        return Triple(type, startedAt, expecting)
     }
 
 

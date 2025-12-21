@@ -3,7 +3,10 @@ package com.example.adamapplock.protection
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.viewModelScope
 import com.example.adamapplock.PermissionUtils
 import com.example.adamapplock.Prefs
@@ -15,7 +18,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 data class ProtectionUiState(
-    val permissions: PermissionSnapshot = PermissionSnapshot(false, false),
+    val permissions: PermissionSnapshot = PermissionSnapshot(false, false, false),
     val protectionEnabled: Boolean = false,
     val serviceRunning: Boolean = false,
     val pendingEnable: Boolean = false,
@@ -23,7 +26,7 @@ data class ProtectionUiState(
     val healthCheckInProgress: Boolean = false
 )
 
-class ProtectionViewModel(application: Application) : AndroidViewModel(application) {
+class ProtectionViewModel(application: Application) : AndroidViewModel(application), DefaultLifecycleObserver {
 
     private val appContext: Context = application.applicationContext
     private val _uiState = MutableStateFlow(
@@ -36,25 +39,44 @@ class ProtectionViewModel(application: Application) : AndroidViewModel(applicati
     val uiState: StateFlow<ProtectionUiState> = _uiState
 
     private var lastPermissions: PermissionSnapshot = _uiState.value.permissions
+    private var batteryRestrictionNotified: Boolean = false
+
+    private var appInForeground: Boolean = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)
 
     init {
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         refreshPermissions(log = true)
         viewModelScope.launch {
             while (isActive) {
-                refreshPermissions()
-                delay(2_000)
+                if (!appInForeground) {
+                    refreshPermissions()
+                }
+                delay(5_000)
             }
         }
     }
 
+    override fun onStart(owner: LifecycleOwner) {
+        appInForeground = true
+        refreshPermissions(log = true)
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        appInForeground = false
+    }
+
     fun refreshPermissions(log: Boolean = false) {
         val snapshot = PermissionSnapshot.capture(appContext)
+        batteryRestrictionNotified = batteryRestrictionNotified && !snapshot.batteryUnrestricted
+
         if (snapshot != lastPermissions || log) {
+            val previous = lastPermissions
             lastPermissions = snapshot
             Log.i(
                 TAG,
-                "permission_state overlay=${snapshot.overlayGranted} usage=${snapshot.usageGranted}"
+                "permission_state overlay=${snapshot.overlayGranted} usage=${snapshot.usageGranted} battery=${snapshot.batteryUnrestricted}"
             )
+            handlePermissionRegression(previous, snapshot)
         }
         _uiState.update { state ->
             state.copy(
@@ -98,10 +120,7 @@ class ProtectionViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun startProtection() {
-        if (!PermissionUtils.hasOverlayPermission(appContext) || !PermissionUtils.hasUsageAccess(
-                appContext
-            )
-        ) {
+        if (!PermissionUtils.hasOverlayPermission(appContext) || !PermissionUtils.hasUsageAccess(appContext) || !PermissionUtils.hasUnrestrictedBattery(appContext)) {
             Log.w(TAG, "startProtection skipped: missing permission")
             _uiState.update { it.copy(pendingEnable = true, protectionEnabled = false) }
             Prefs.setProtectionEnabled(appContext, false)
@@ -119,11 +138,17 @@ class ProtectionViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    private fun stopProtection() {
+    private fun stopProtection(pending: Boolean = false) {
         Log.i(TAG, "Stopping protection service")
         Prefs.setProtectionEnabled(appContext, false)
         ProtectionController.stop(appContext)
-        _uiState.update { it.copy(protectionEnabled = false, pendingEnable = false, serviceRunning = false) }
+        _uiState.update {
+            it.copy(
+                protectionEnabled = false,
+                pendingEnable = pending,
+                serviceRunning = false
+            )
+        }
     }
 
     private fun handlePendingEnable() {
@@ -133,11 +158,30 @@ class ProtectionViewModel(application: Application) : AndroidViewModel(applicati
             startProtection()
         } else if (state.protectionEnabled && !state.permissions.ready) {
             Log.w(TAG, "Permissions revoked while enabled; stopping protection.")
-            stopProtection()
+            stopProtection(pending = true)
         } else if (state.protectionEnabled && state.permissions.ready && !state.serviceRunning) {
             Log.i(TAG, "Protection toggle is on but service not running; restarting.")
             startProtection()
         }
+    }
+
+    private fun handlePermissionRegression(previous: PermissionSnapshot?, current: PermissionSnapshot) {
+        if (previous == null) return
+        val wasReady = previous.ready
+        if (wasReady && !current.batteryUnrestricted) {
+            notifyBatteryRestriction()
+        }
+    }
+
+    private fun notifyBatteryRestriction() {
+        if (batteryRestrictionNotified) return
+        batteryRestrictionNotified = true
+        ProtectionController.postBatteryRestrictedNotification(appContext)
+    }
+
+    override fun onCleared() {
+        ProcessLifecycleOwner.get().lifecycle.removeObserver(this)
+        super.onCleared()
     }
 
     companion object {

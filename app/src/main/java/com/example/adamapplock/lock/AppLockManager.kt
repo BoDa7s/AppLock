@@ -2,25 +2,28 @@ package com.example.adamapplock.lock
 
 import android.content.Context
 import com.example.adamapplock.Prefs
+import java.util.UUID
 
 object AppLockManager {
-    fun shouldLock(context: Context): Boolean {
-        val lastUnlock = Prefs.lastAppUnlock(context)
-        if (lastUnlock == 0L) return true
-        val timer = Prefs.getLockTimerMillis(context)
-        if (timer == Prefs.LOCK_TIMER_IMMEDIATE) return true
 
-        val reference = Prefs.lastAppBackground(context).takeIf { it != 0L } ?: lastUnlock
-        val elapsed = System.currentTimeMillis() - reference
-        return elapsed >= timer
+    private val processSessionToken: String = UUID.randomUUID().toString()
+
+    fun shouldLock(context: Context): Boolean {
+        val unlocked = Prefs.isAppSessionUnlocked(context)
+        val sessionToken = Prefs.getAppSessionToken(context)
+        return !unlocked || sessionToken != processSessionToken
     }
 
     fun markUnlocked(context: Context) {
         Prefs.setAppLastUnlockNow(context)
+        Prefs.setAppSessionUnlocked(context, true)
+        Prefs.setAppSessionToken(context, processSessionToken)
         Prefs.clearAppLastBackground(context)
     }
 
     fun lockNow(context: Context) {
+        Prefs.setAppSessionUnlocked(context, false)
+        Prefs.setAppSessionToken(context, null)
         Prefs.clearAppUnlock(context)
         Prefs.clearAppLastBackground(context)
     }

@@ -3,6 +3,7 @@ package com.example.adamapplock
 import android.app.AppOpsManager
 import android.content.Context
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 
 object PermissionUtils {
@@ -27,5 +28,10 @@ object PermissionUtils {
             )
         }
         return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    fun hasUnrestrictedBattery(ctx: Context): Boolean {
+        val pm = ctx.getSystemService(PowerManager::class.java) ?: return false
+        return pm.isIgnoringBatteryOptimizations(ctx.packageName)
     }
 }

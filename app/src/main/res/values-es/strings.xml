@@ -93,28 +93,40 @@
 
     <!-- Permissions & protection -->
     <string name="permission_overlay_title">Mostrar sobre otras apps</string>
-    <string name="permission_overlay_description">Permite que AdamAppLock aparezca encima para mostrar la pantalla de bloqueo sobre las apps protegidas.</string>
+    <string name="permission_overlay_description">Permite que AdamAppLock aparezca encima para mostrar de forma segura la pantalla de bloqueo sobre las apps protegidas.</string>
     <string name="permission_usage_title">Acceso de uso</string>
     <string name="permission_usage_description">El acceso de uso permite a AdamAppLock detectar qué app está abierta para proteger las que elijas.</string>
+    <string name="permission_battery_title">Uso en segundo plano sin restricciones</string>
+    <string name="permission_battery_description">Configura AdamAppLock en uso de batería sin restricciones para que la protección y su superposición no se cierren en segundo plano.</string>
     <string name="permission_button_open">Abrir ajustes</string>
     <string name="permission_granted_label">Permiso concedido</string>
     <string name="permission_required_label">Permiso requerido</string>
     <string name="permission_gate_title">Activa los permisos requeridos</string>
-    <string name="permission_gate_description">Habilita ambos permisos para empezar a proteger tus apps. La navegación está bloqueada hasta concederlos.</string>
-    <string name="permission_missing_toast">Concede superposición y acceso de uso para activar la protección.</string>
+    <string name="permission_gate_description">Activa todos los permisos requeridos para empezar a proteger tus apps. La navegación se bloquea hasta concederlos.</string>
+    <string name="permission_missing_toast">Concede superposición, acceso de uso y uso en segundo plano sin restricciones para activar la protección.</string>
     <string name="protection_toggle_title">Iniciar protección</string>
     <string name="protection_toggle_stop">Detener protección</string>
     <string name="protection_toggle_description">Bloquea las apps seleccionadas usando superposición y acceso de uso. Requiere una notificación persistente.</string>
     <string name="protection_status_running">La protección está activa</string>
     <string name="protection_status_stopped">La protección está desactivada</string>
     <string name="protection_status_pending_permissions">Esperando permisos para activar la protección</string>
-    <string name="protection_status_permissions_missing">Faltan permisos: concede superposición y acceso de uso</string>
+    <string name="protection_status_permissions_missing">Faltan permisos: concede superposición, acceso de uso y batería sin restricciones</string>
     <string name="protection_status_summary">AdamAppLock vigila tus apps bloqueadas y muestra la superposición cuando se abre una app protegida.</string>
     <string name="protection_service_running">El servicio de protección se está ejecutando</string>
     <string name="protection_service_not_running">El servicio de protección está en pausa</string>
     <string name="protection_manage_in_settings">Administrar protección en Ajustes</string>
     <string name="protection_settings_title">Habilitar protección con superposición</string>
     <string name="protection_settings_description">Inicia o detén la superposición de bloqueo y su notificación. Los permisos deben permanecer concedidos para que aparezca correctamente.</string>
+    <string name="battery_permission_dialog_title">Permitir uso en segundo plano sin restricciones</string>
+    <string name="battery_permission_dialog_body">Configura AdamAppLock con batería sin restricciones para que la protección siga activa. Continúa a los ajustes de batería para otorgarlo.</string>
+    <string name="permission_escort_channel_name">Escolta de permisos</string>
+    <string name="permission_escort_channel_description">Mantiene AdamAppLock cerca mientras concedes permisos.</string>
+    <string name="permission_escort_monitor_title">Esperando el permiso</string>
+    <string name="permission_escort_monitor_body">Vuelve a AdamAppLock después de conceder el acceso.</string>
+    <string name="permission_escort_granted_title">Permiso concedido</string>
+    <string name="permission_escort_granted_body">Regresando a AdamAppLock para continuar.</string>
+    <string name="permission_escort_timeout_title">Aún falta el permiso</string>
+    <string name="permission_escort_timeout_body">Toca para volver y terminar la activación.</string>
     <string name="protection_notification_title">Protección de apps en ejecución</string>
     <string name="protection_notification_body">AdamAppLock está monitoreando las apps bloqueadas.</string>
     <string name="protection_notification_channel">Protección de apps</string>
@@ -127,8 +139,14 @@
     <string name="health_check_detail_usage">Acceso de uso: %1$s</string>
     <string name="health_check_detail_service">Servicio en ejecución: %1$s</string>
     <string name="health_check_detail_overlay_draw">Renderizado de superposición: %1$s</string>
+    <string name="health_check_detail_battery">Uso en segundo plano (batería): %1$s</string>
     <string name="health_check_state_ok">OK</string>
-    <string name="health_check_state_missing">Falta</string>
+    <string name="health_check_state_attention">Requiere atención</string>
+    <string name="health_check_state_not_running">No está en ejecución</string>
+    <string name="health_check_state_failed">Falló</string>
+    <string name="health_check_state_restricted">Restringido</string>
+    <string name="battery_restricted_title">Protección en pausa</string>
+    <string name="battery_restricted_body">Las restricciones de batería detuvieron AdamAppLock. Habilita el uso en segundo plano sin restricciones para reanudar la protección.</string>
 
     <!-- Misc -->
     <string name="version_unknown">Desconocido</string>

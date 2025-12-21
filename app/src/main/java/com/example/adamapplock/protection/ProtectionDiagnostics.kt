@@ -17,10 +17,11 @@ data class HealthCheckResult(
     val usageGranted: Boolean,
     val serviceRunning: Boolean,
     val overlayTestPassed: Boolean,
+    val batteryUnrestricted: Boolean,
     val timestampMillis: Long,
     val notes: String
 ) {
-    val ready: Boolean get() = overlayGranted && usageGranted
+    val ready: Boolean get() = overlayGranted && usageGranted && batteryUnrestricted
 }
 
 object ProtectionDiagnostics {
@@ -48,6 +49,7 @@ object ProtectionDiagnostics {
             append(", usageGranted=").append(permissions.usageGranted)
             append(", serviceRunning=").append(serviceRunning)
             append(", overlayTestPassed=").append(overlayTestPassed)
+            append(", batteryUnrestricted=").append(permissions.batteryUnrestricted)
         }
 
         return HealthCheckResult(
@@ -55,6 +57,7 @@ object ProtectionDiagnostics {
             usageGranted = permissions.usageGranted,
             serviceRunning = serviceRunning,
             overlayTestPassed = overlayTestPassed,
+            batteryUnrestricted = permissions.batteryUnrestricted,
             timestampMillis = System.currentTimeMillis(),
             notes = noteBuilder
         )
