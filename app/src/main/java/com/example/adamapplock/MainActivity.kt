@@ -258,13 +258,24 @@ class MainActivity : AppCompatActivity() {
                                 ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
                             }
                         }
+                        val batterySettingsIntent = remember(ctx.packageName) {
+                            {
+                                PermissionEscortManager.beginSession(ctx, PermissionEscortType.Battery)
+                                val intent = Intent(
+                                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                    Uri.parse("package:${ctx.packageName}")
+                                )
+                                ctx.startActivity(intent)
+                            }
+                        }
 
                         if (!permissions.ready) {
                             BackHandler(enabled = true) { activity.finish() }
                             PermissionGate(
                                 permissions = permissions,
                                 onRequestOverlay = overlaySettingsIntent,
-                                onRequestUsage = usageSettingsIntent
+                                onRequestUsage = usageSettingsIntent,
+                                onRequestBattery = batterySettingsIntent
                             )
                             return@AdamAppLockTheme
                         }
@@ -591,6 +602,14 @@ fun SettingsScreen(
                     ctx.startActivity(intent)
                 },
                 onRequestUsage = { ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) },
+                onRequestBattery = {
+                    PermissionEscortManager.beginSession(ctx, PermissionEscortType.Battery)
+                    val intent = Intent(
+                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:${ctx.packageName}")
+                    )
+                    ctx.startActivity(intent)
+                },
                 onRunHealthCheck = { protectionViewModel.runHealthCheck() }
             )
         }
@@ -1065,6 +1084,7 @@ private fun PermissionRequestList(
     permissions: PermissionSnapshot,
     onRequestOverlay: () -> Unit,
     onRequestUsage: () -> Unit,
+    onRequestBattery: () -> Unit,
     modifier: Modifier = Modifier,
     showGranted: Boolean = false
 ) {
@@ -1084,6 +1104,13 @@ private fun PermissionRequestList(
             description = stringResource(R.string.permission_usage_description),
             granted = permissions.usageGranted,
             onClick = onRequestUsage,
+            showWhenGranted = showGranted
+        )
+        PermissionRequestCard(
+            title = stringResource(R.string.permission_battery_title),
+            description = stringResource(R.string.permission_battery_description),
+            granted = permissions.batteryUnrestricted,
+            onClick = onRequestBattery,
             showWhenGranted = showGranted
         )
     }
@@ -1184,7 +1211,8 @@ private fun ProtectionStatusPanel(
 private fun PermissionGate(
     permissions: PermissionSnapshot,
     onRequestOverlay: () -> Unit,
-    onRequestUsage: () -> Unit
+    onRequestUsage: () -> Unit,
+    onRequestBattery: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
     Column(
@@ -1213,6 +1241,7 @@ private fun PermissionGate(
             permissions = permissions,
             onRequestOverlay = onRequestOverlay,
             onRequestUsage = onRequestUsage,
+            onRequestBattery = onRequestBattery,
             showGranted = false
         )
     }
@@ -1225,11 +1254,13 @@ private fun ProtectionSettingsCard(
     onToggle: (Boolean) -> Unit,
     onRequestOverlay: () -> Unit,
     onRequestUsage: () -> Unit,
+    onRequestBattery: () -> Unit,
     onRunHealthCheck: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
     val toggleChecked = state.protectionEnabled || state.pendingEnable
     val ready = permissions.ready
+    var showBatteryDialog by remember { mutableStateOf(false) }
     val statusText = when {
         state.protectionEnabled && ready -> stringResource(R.string.protection_status_running)
         state.pendingEnable -> stringResource(R.string.protection_status_pending_permissions)
@@ -1262,7 +1293,13 @@ private fun ProtectionSettingsCard(
                 }
                 Switch(
                     checked = toggleChecked,
-                    onCheckedChange = onToggle,
+                    onCheckedChange = { enabled ->
+                        if (enabled && !permissions.batteryUnrestricted) {
+                            showBatteryDialog = true
+                            return@Switch
+                        }
+                        onToggle(enabled)
+                    },
                     enabled = ready || toggleChecked,
                     colors = SwitchDefaults.colors(
                         checkedBorderColor = Color.Transparent,
@@ -1273,6 +1310,24 @@ private fun ProtectionSettingsCard(
                         uncheckedBorderColor = Color.Transparent
                     )
                 )
+                if (showBatteryDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showBatteryDialog = false },
+                        title = { Text(stringResource(R.string.battery_permission_dialog_title)) },
+                        text = { Text(stringResource(R.string.battery_permission_dialog_body)) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showBatteryDialog = false
+                                onRequestBattery()
+                            }) { Text(stringResource(R.string.permission_button_open)) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showBatteryDialog = false }) {
+                                Text(stringResource(R.string.action_cancel))
+                            }
+                        }
+                    )
+                }
             }
 
             Text(
@@ -1285,7 +1340,8 @@ private fun ProtectionSettingsCard(
                 PermissionRequestList(
                     permissions = permissions,
                     onRequestOverlay = onRequestOverlay,
-                    onRequestUsage = onRequestUsage
+                    onRequestUsage = onRequestUsage,
+                    onRequestBattery = onRequestBattery
                 )
             }
 
@@ -1335,28 +1391,35 @@ private fun HealthCheckSummary(result: HealthCheckResult) {
             Text(
                 text = stringResource(
                     R.string.health_check_detail_overlay,
-                    result.overlayGranted.toStatusLabel()
+                    result.overlayGranted.toAttentionLabel()
                 ),
                 color = cs.onSurfaceVariant
             )
             Text(
                 text = stringResource(
                     R.string.health_check_detail_usage,
-                    result.usageGranted.toStatusLabel()
+                    result.usageGranted.toAttentionLabel()
                 ),
                 color = cs.onSurfaceVariant
             )
             Text(
                 text = stringResource(
                     R.string.health_check_detail_service,
-                    result.serviceRunning.toStatusLabel()
+                    result.serviceRunning.toRunningLabel()
                 ),
                 color = cs.onSurfaceVariant
             )
             Text(
                 text = stringResource(
                     R.string.health_check_detail_overlay_draw,
-                    result.overlayTestPassed.toStatusLabel()
+                    result.overlayTestPassed.toOverlayProbeLabel()
+                ),
+                color = cs.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(
+                    R.string.health_check_detail_battery,
+                    result.batteryUnrestricted.toBatteryLabel()
                 ),
                 color = cs.onSurfaceVariant
             )
@@ -1365,8 +1428,20 @@ private fun HealthCheckSummary(result: HealthCheckResult) {
 }
 
 @Composable
-private fun Boolean.toStatusLabel(): String =
-    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_missing)
+private fun Boolean.toAttentionLabel(): String =
+    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_attention)
+
+@Composable
+private fun Boolean.toRunningLabel(): String =
+    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_not_running)
+
+@Composable
+private fun Boolean.toOverlayProbeLabel(): String =
+    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_failed)
+
+@Composable
+private fun Boolean.toBatteryLabel(): String =
+    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_restricted)
 
 class AppListViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(AppListUiState())

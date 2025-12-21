@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.example.adamapplock.PermissionEscortManager.PermissionEscortType.Battery
 import com.example.adamapplock.PermissionEscortManager.PermissionEscortType.Overlay
 import com.example.adamapplock.PermissionEscortManager.PermissionEscortType.Usage
 import kotlin.time.Duration.Companion.minutes
@@ -15,7 +16,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 object PermissionEscortManager {
 
-    enum class PermissionEscortType { Overlay, Usage }
+    enum class PermissionEscortType { Overlay, Usage, Battery }
 
     data class PermissionEscortSession(
         val type: PermissionEscortType,
@@ -121,6 +122,7 @@ object PermissionEscortManager {
         when (type) {
             Overlay -> PermissionUtils.hasOverlayPermission(context)
             Usage -> PermissionUtils.hasUsageAccess(context)
+            Battery -> PermissionUtils.hasUnrestrictedBattery(context)
         }
 
     private fun postReturnNotification(context: Context, type: PermissionEscortType) {
