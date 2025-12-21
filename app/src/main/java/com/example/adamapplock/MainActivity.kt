@@ -103,6 +103,8 @@ import com.example.adamapplock.protection.ProtectionViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.view.WindowManager
 import androidx.compose.foundation.border
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import com.example.adamapplock.lock.AppLockManager
 import com.example.adamapplock.lock.LockScreen
 import com.example.adamapplock.protection.BiometricUnlockActivity
@@ -812,6 +814,7 @@ private fun PaletteCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsTopBar(@StringRes title: Int, onBack: () -> Unit) {
     val cs = MaterialTheme.colorScheme
