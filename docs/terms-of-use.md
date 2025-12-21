@@ -40,5 +40,7 @@ We may update these Terms. Continued use after changes means you accept the upda
 ## 9. Termination
 We may suspend or end your access if you violate these Terms or misuse the App.
 
-## 10. Contact
-Questions about these Terms? Open an issue on GitHub: **https://github.com/BoDa7s/AppLock/issues**
+## 10. Contact & support
+_Questions?_ Open an issue on 
+**<a href="https://github.com/BoDa7s/AppLock/issues" target="_blank" rel="noopener">GitHub</a>**.
+
