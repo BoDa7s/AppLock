@@ -1,12 +1,19 @@
 title: AdamAppLock
 description: Privacy & Terms
 theme: minima
-# So internal links like /privacy/ work from a project site
-baseurl: "/AppLock"
-url: "https://boda7s.github.io"
 
-# Optional nav (minima supports header_pages)
+url: "https://boda7s.github.io"
+baseurl: "/AppLock"
+
 header_pages:
   - index.md
   - privacy-policy.md
   - terms-of-use.md
+
+# Add a custom head include (for fonts/favicon) and a custom stylesheet
+include:
+  - _includes
+  - assets
+
+minima:
+  skin: auto   # light/dark follows system
