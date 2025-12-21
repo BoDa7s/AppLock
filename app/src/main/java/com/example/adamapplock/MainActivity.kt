@@ -334,6 +334,13 @@ class MainActivity : AppCompatActivity() {
         PermissionEscortManager.onAppResumed(this)
     }
 
+    override fun onDestroy() {
+        if (isFinishing && !isChangingConfigurations) {
+            AppLockManager.lockNow(this)
+        }
+        super.onDestroy()
+    }
+
     private fun captureEscortIntent(intent: Intent?) {
         val fromEscort = intent?.getBooleanExtra(PermissionEscortManager.EXTRA_FROM_PERMISSION_ESCORT, false) == true
         if (fromEscort) {
