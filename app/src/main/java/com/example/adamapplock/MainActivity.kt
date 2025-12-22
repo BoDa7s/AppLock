@@ -104,6 +104,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.view.WindowManager
 import androidx.compose.foundation.border
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import com.example.adamapplock.lock.AppLockManager
 import com.example.adamapplock.lock.LockScreen

@@ -11,36 +11,47 @@ import com.example.adamapplock.Prefs
 /**
  * Best-effort restart when the OS kills the process/service.
  *
- * This is intentionally conservative to avoid aggressive restart loops.
- * If the user force-stops the app, Android will block all restarts until
- * the user manually opens the app again.
+ * - Conservative: prevents restart loops.
+ * - If user FORCE STOPS the app, Android will block alarms/restarts until user opens the app again.
  */
 object ProtectionRestartScheduler {
 
-    private const val TAG = "ProtectionRestart"
+    private const val TAG = "ProtectionRestartScheduler"
 
-    fun schedule(context: Context, reason: String) {
-        val ctx = context.applicationContext
-        if (!Prefs.isProtectionEnabled(ctx)) return
+    // Don’t try restarting more frequently than this (avoids loops / Play policy headaches).
+    private const val MIN_ATTEMPT_INTERVAL_MS = 30_000L
 
+    // How long to wait before attempting restart.
+    private const val RESTART_DELAY_MS = 10_000L
+
+    fun schedule(ctx: Context, reason: String) {
         val now = System.currentTimeMillis()
-        val last = Prefs.lastServiceRestartAttempt(ctx)
-        val delayMs = if (now - last < 15_000) 60_000L else 5_000L
+        val lastAttempt = Prefs.lastServiceRestartAttempt(ctx)
+
+        // Throttle restarts to avoid aggressive loops.
+        if (lastAttempt > 0L && (now - lastAttempt) < MIN_ATTEMPT_INTERVAL_MS) {
+            Log.w(TAG, "Restart throttled. last=$lastAttempt now=$now reason=$reason")
+            return
+        }
+
+        // Record attempt timestamp
         Prefs.setLastServiceRestartAttemptNow(ctx)
 
         val intent = Intent(ctx, AutoStartReceiver::class.java).apply {
             action = AutoStartReceiver.ACTION_RESTART_PROTECTION
             putExtra(AutoStartReceiver.EXTRA_REASON, reason)
         }
+
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or
-            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+
         val pi = PendingIntent.getBroadcast(ctx, 9001, intent, flags)
 
-        val am = ctx.getSystemService(AlarmManager::class.java)
-        if (am == null) return
+        val am = ctx.getSystemService(AlarmManager::class.java) ?: return
 
-        val triggerAt = now + delayMs
-        Log.i(TAG, "Scheduling restart in ${delayMs}ms reason=$reason")
+        val triggerAt = now + RESTART_DELAY_MS
+        Log.i(TAG, "Scheduling restart in ${RESTART_DELAY_MS}ms reason=$reason")
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
         } else {

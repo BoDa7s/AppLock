@@ -35,6 +35,7 @@ object Prefs {
 
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_LANGUAGE = "app_language"
+    private const val KEY_LAST_SERVICE_RESTART_ATTEMPT = "last_service_restart_attempt"
 
     private fun prefs(ctx: Context) =
         ctx.getSharedPreferences("lock_prefs", Context.MODE_PRIVATE)
@@ -265,6 +266,13 @@ object Prefs {
         val expecting = prefs.getBoolean(KEY_PERMISSION_ESCORT_EXPECTING, false)
         return Triple(type, startedAt, expecting)
     }
+
+    fun setLastServiceRestartAttemptNow(ctx: Context) {
+        sp(ctx).edit { putLong(KEY_LAST_SERVICE_RESTART_ATTEMPT, System.currentTimeMillis()) }
+    }
+
+    fun lastServiceRestartAttempt(ctx: Context): Long =
+        sp(ctx).getLong(KEY_LAST_SERVICE_RESTART_ATTEMPT, 0L)
 
 
 }

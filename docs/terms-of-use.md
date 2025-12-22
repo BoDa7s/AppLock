@@ -28,7 +28,7 @@ You may only use the App on devices you own or are authorized to manage. Do not 
 - Understand that disabling system security features or removing required permissions can reduce protection.
 
 ## 5. Data & privacy
-The App is designed to operate on-device and does not send personal data to remote servers. See the **[Privacy Policy](/privacy/)** for details.
+The App is designed to operate on-device and does not send personal data to remote servers. See the **[Privacy Policy](https://boda7s.github.io/AppLock/privacy/)** for details.
 
 ## 6. Open-source components
 The App may include open-source libraries under their respective licenses. Notices are available in the repository.
