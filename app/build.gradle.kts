@@ -60,6 +60,10 @@ kotlin {
 }
 
 dependencies {
+
+    implementation(libs.androidx.core.splashscreen)
+
+
     // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
 
