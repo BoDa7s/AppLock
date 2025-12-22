@@ -1297,21 +1297,18 @@ private fun AboutSettingsScreen(
                         SettingRow(
                             icon = Icons.Rounded.PrivacyTip,
                             title = stringResource(R.string.privacy_policy_label),
-                            subtitle = stringResource(R.string.privacy_policy_url),
                             onClick = { uriHandler.openUri(ctx.getString(R.string.privacy_policy_url)) },
                             showChevron = true
                         )
                         SettingRow(
                             icon = Icons.Rounded.Description,
                             title = stringResource(R.string.terms_of_use_label),
-                            subtitle = stringResource(R.string.terms_of_use_url),
                             onClick = { uriHandler.openUri(ctx.getString(R.string.terms_of_use_url)) },
                             showChevron = true
                         )
                         SettingRow(
                             icon = Icons.Rounded.SupportAgent,
                             title = stringResource(R.string.support_label),
-                            subtitle = stringResource(R.string.support_url),
                             onClick = { uriHandler.openUri(ctx.getString(R.string.support_url)) },
                             showChevron = true
                         )

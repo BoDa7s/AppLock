@@ -101,6 +101,7 @@
 
     <!-- Lock screen -->
     <string name="app_locked_title">ऐप लॉक है</string>
+    <string name="app_locked_subtitle">%1$s को जारी रखने के लिए अनलॉक करें</string>
     <string name="lock_screen_passcode_label">पासकोड</string>
     <string name="biometric_prompt_title">अनलॉक करें</string>
     <string name="biometric_prompt_subtitle">अनलॉक करने के लिए फ़िंगरप्रिंट उपयोग करें</string>
@@ -116,8 +117,10 @@
     <string name="permission_button_open">सेटिंग्स खोलें</string>
     <string name="permission_granted_label">अनुमति दी गई</string>
     <string name="permission_required_label">अनुमति आवश्यक</string>
+    <string name="permission_recommended_label">अनुशंसित</string>
     <string name="permission_gate_title">जरूरी अनुमतियाँ चालू करें</string>
-    <string name="permission_gate_description">अपनी ऐप सुरक्षा शुरू करने के लिए सभी आवश्यक अनुमतियाँ सक्षम करें। इन्हें मिलने तक नेविगेशन अवरुद्ध रहेगा.</string>
+    <string name="permission_gate_description">ऐप्स को लॉक करने के लिए AdamAppLock को ओवरले और उपयोग एक्सेस की आवश्यकता है। आप अभी के लिए छोड़ सकते हैं, लेकिन उन्हें चालू करने तक सुरक्षा बंद रहेगी।</string>
+    <string name="permission_gate_skip">छोड़ें</string>
     <string name="permission_missing_toast">सुरक्षा चालू करने के लिए ओवरले, उपयोग एक्सेस, और असीमित पृष्ठभूमि उपयोग दें.</string>
     <string name="protection_toggle_title">सुरक्षा शुरू करें</string>
     <string name="protection_toggle_stop">सुरक्षा रोकें</string>

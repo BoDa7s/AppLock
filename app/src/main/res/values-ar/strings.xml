@@ -101,6 +101,7 @@
 
     <!-- Lock screen -->
     <string name="app_locked_title">التطبيق مقفل</string>
+    <string name="app_locked_subtitle">ألغِ قفل %1$s للمتابعة</string>
     <string name="lock_screen_passcode_label">رمز المرور</string>
     <string name="biometric_prompt_title">إلغاء القفل</string>
     <string name="biometric_prompt_subtitle">استخدم البصمة لإلغاء القفل</string>
@@ -116,8 +117,10 @@
     <string name="permission_button_open">فتح الإعدادات</string>
     <string name="permission_granted_label">تم منح الإذن</string>
     <string name="permission_required_label">الإذن مطلوب</string>
+    <string name="permission_recommended_label">موصى به</string>
     <string name="permission_gate_title">فعّل الأذونات المطلوبة</string>
-    <string name="permission_gate_description">فعّل جميع الأذونات المطلوبة لبدء حماية تطبيقاتك. يتم حظر التنقل حتى منحها.</string>
+    <string name="permission_gate_description">لقفل التطبيقات، يحتاج AdamAppLock إلى إذني الظهور فوق التطبيقات الأخرى والوصول إلى الاستخدام. يمكنك التخطي الآن، لكن ستبقى الحماية متوقفة حتى تفعّلها.</string>
+    <string name="permission_gate_skip">تخطي</string>
     <string name="permission_missing_toast">امنح الظهور فوق التطبيقات الأخرى، ووصول الاستخدام، والاستخدام غير المقيّد في الخلفية لتفعيل الحماية.</string>
     <string name="protection_toggle_title">بدء الحماية</string>
     <string name="protection_toggle_stop">إيقاف الحماية</string>

@@ -101,6 +101,7 @@
 
     <!-- Lock screen -->
     <string name="app_locked_title">Application verrouillée</string>
+    <string name="app_locked_subtitle">Déverrouillez %1$s pour continuer</string>
     <string name="lock_screen_passcode_label">Code</string>
     <string name="biometric_prompt_title">Déverrouiller</string>
     <string name="biometric_prompt_subtitle">Utilisez l\'empreinte digitale pour déverrouiller</string>
@@ -116,8 +117,10 @@
     <string name="permission_button_open">Ouvrir les paramètres</string>
     <string name="permission_granted_label">Autorisation accordée</string>
     <string name="permission_required_label">Autorisation requise</string>
+    <string name="permission_recommended_label">Recommandé</string>
     <string name="permission_gate_title">Activer les autorisations requises</string>
-    <string name="permission_gate_description">Activez toutes les autorisations requises pour commencer à protéger vos applications. La navigation est bloquée tant qu\'elles ne sont pas accordées.</string>
+    <string name="permission_gate_description">Pour verrouiller les apps, AdamAppLock nécessite l’autorisation de superposition et l’accès à l’utilisation. Vous pouvez ignorer pour l’instant, mais la protection restera désactivée jusqu’à ce que vous les activiez.</string>
+    <string name="permission_gate_skip">Ignorer</string>
     <string name="permission_missing_toast">Accordez la superposition, l\'accès à l\'utilisation et l\'utilisation en arrière-plan sans restriction pour activer la protection.</string>
     <string name="protection_toggle_title">Démarrer la protection</string>
     <string name="protection_toggle_stop">Arrêter la protection</string>

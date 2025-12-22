@@ -63,10 +63,24 @@ object PermissionUtils {
 
     /**
      * Opens system settings screens where the user can set Battery to "Unrestricted"
-     * or allow background activity. This does NOT request exemptions.
+     * or allow background activity. Attempts a direct exemption request first when
+     * available, then falls back to relevant settings screens.
      */
     fun openBatterySettings(ctx: Context) {
         val pkgUri = Uri.parse("package:${ctx.packageName}")
+        val pm = ctx.packageManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val powerManager = ctx.getSystemService(PowerManager::class.java)
+            val alreadyIgnoring = powerManager?.isIgnoringBatteryOptimizations(ctx.packageName) == true
+            val requestIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, pkgUri)
+            if (!alreadyIgnoring && requestIntent.resolveActivity(pm) != null) {
+                requestIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                ctx.startActivity(requestIntent)
+                return
+            }
+        }
+
         val intents = listOf(
             // App details (Battery settings live under this on most devices)
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkgUri),
@@ -74,7 +88,6 @@ object PermissionUtils {
             Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
         )
 
-        val pm = ctx.packageManager
         val chosen = intents.firstOrNull { it.resolveActivity(pm) != null }
         chosen?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (chosen != null) ctx.startActivity(chosen)

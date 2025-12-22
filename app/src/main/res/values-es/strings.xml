@@ -101,6 +101,7 @@
 
     <!-- Lock screen -->
     <string name="app_locked_title">Aplicación bloqueada</string>
+    <string name="app_locked_subtitle">Desbloquea %1$s para continuar</string>
     <string name="lock_screen_passcode_label">Código</string>
     <string name="biometric_prompt_title">Desbloquear</string>
     <string name="biometric_prompt_subtitle">Usa la huella digital para desbloquear</string>
@@ -116,8 +117,10 @@
     <string name="permission_button_open">Abrir ajustes</string>
     <string name="permission_granted_label">Permiso concedido</string>
     <string name="permission_required_label">Permiso requerido</string>
+    <string name="permission_recommended_label">Recomendado</string>
     <string name="permission_gate_title">Activa los permisos requeridos</string>
-    <string name="permission_gate_description">Activa todos los permisos requeridos para empezar a proteger tus apps. La navegación se bloquea hasta concederlos.</string>
+    <string name="permission_gate_description">Para bloquear apps, AdamAppLock necesita permisos de superposición y acceso de uso. Puedes omitirlo por ahora, pero la protección permanecerá desactivada hasta que los actives.</string>
+    <string name="permission_gate_skip">Omitir</string>
     <string name="permission_missing_toast">Concede superposición, acceso de uso y uso en segundo plano sin restricciones para activar la protección.</string>
     <string name="protection_toggle_title">Iniciar protección</string>
     <string name="protection_toggle_stop">Detener protección</string>
