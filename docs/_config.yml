@@ -1,0 +1,19 @@
+title: AdamAppLock
+description: Privacy & Terms
+theme: minima
+
+url: "https://boda7s.github.io"
+baseurl: "/AppLock"
+
+header_pages:
+  - index.md
+  - privacy-policy.md
+  - terms-of-use.md
+
+# Add a custom head include (for fonts/favicon) and a custom stylesheet
+include:
+  - _includes
+  - assets
+
+minima:
+  skin: auto   # light/dark follows system

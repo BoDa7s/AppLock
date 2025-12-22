@@ -30,6 +30,18 @@
     <string name="settings_section_language">Langue de l\'application</string>
     <string name="settings_section_theme">Thème</string>
     <string name="settings_section_about">À propos</string>
+    <string name="settings_card_protection_title">Protection et sécurité</string>
+    <string name="settings_card_protection_subtitle">Active la protection et gère la méthode de déverrouillage.</string>
+    <string name="settings_card_lock_behavior_title">Comportement du verrou</string>
+    <string name="settings_card_lock_behavior_subtitle">Quand le verrou apparaît.</string>
+    <string name="settings_card_permissions_title">Autorisations</string>
+    <string name="settings_card_permissions_subtitle">Requises pour une protection fiable.</string>
+    <string name="settings_card_system_title">Système</string>
+    <string name="settings_card_system_subtitle">Langue et apparence.</string>
+    <string name="settings_card_about_title">À propos et assistance</string>
+    <string name="settings_card_about_subtitle">Version, confidentialité et aide.</string>
+    <string name="status_active">Actif</string>
+    <string name="status_paused">En pause</string>
 
     <!-- Settings content -->
     <string name="use_fingerprint">Utiliser l\'empreinte digitale</string>
@@ -43,6 +55,9 @@
     <string name="language_spanish">Espagnol</string>
     <string name="language_french">Français</string>
     <string name="language_hindi">Hindi</string>
+    <string name="settings_language_label">Langue de l\'application</string>
+    <string name="settings_language_use_device">Utiliser l\'appareil</string>
+    <string name="settings_theme_label">Thème</string>
     <string name="theme_system">Système</string>
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>
@@ -147,6 +162,17 @@
     <string name="health_check_state_restricted">Restreint</string>
     <string name="battery_restricted_title">Protection en pause</string>
     <string name="battery_restricted_body">Les restrictions de batterie ont arrêté AdamAppLock. Activez l’utilisation en arrière-plan sans restriction pour reprendre la protection.</string>
+    <string name="permissions_check_now">Exécuter la vérification des autorisations</string>
+    <string name="permissions_check_running">Vérification des autorisations…</string>
+    <string name="permissions_all_granted">Toutes les autorisations requises sont accordées.</string>
+    <string name="settings_permissions_intro">Requises pour une protection fiable.</string>
+    <string name="lock_immediately_description">Verrouiller dès que l’écran s’éteint.</string>
+    <string name="privacy_policy_label">Politique de confidentialité</string>
+    <string name="terms_of_use_label">Conditions d’utilisation</string>
+    <string name="support_label">Assistance</string>
+    <string name="privacy_policy_url">https://boda7s.github.io/AppLock/privacy/</string>
+    <string name="terms_of_use_url">https://boda7s.github.io/AppLock/terms/</string>
+    <string name="support_url">https://github.com/BoDa7s/AppLock/issues</string>
 
     <!-- Misc -->
     <string name="version_unknown">Inconnu</string>

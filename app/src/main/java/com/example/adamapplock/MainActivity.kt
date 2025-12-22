@@ -10,6 +10,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
@@ -44,9 +47,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.semantics.semantics
 import com.example.adamapplock.security.PasswordRepository
-import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.automirrored.rounded.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.lazy.LazyColumn
@@ -54,16 +57,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.ScreenLockRotation
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -99,6 +103,8 @@ import com.example.adamapplock.protection.ProtectionViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.view.WindowManager
 import androidx.compose.foundation.border
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import com.example.adamapplock.lock.AppLockManager
 import com.example.adamapplock.lock.LockScreen
 import com.example.adamapplock.protection.BiometricUnlockActivity
@@ -313,7 +319,8 @@ class MainActivity : AppCompatActivity() {
                                     onBiometricToggle = { enabled ->
                                         useBiometric = enabled
                                         Prefs.setUseBiometric(ctx, enabled)
-                                    }
+                                    },
+                                    onChangePasscode = { ChangePasswordRow() }
                                 )
                             }
                         }
@@ -539,7 +546,6 @@ private val lockTimerOptions = listOf(
     )
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -547,7 +553,8 @@ fun SettingsScreen(
     onThemeChange: (ThemeMode) -> Unit,
     protectionViewModel: ProtectionViewModel,
     useBiometric: Boolean,
-    onBiometricToggle: (Boolean) -> Unit
+    onBiometricToggle: (Boolean) -> Unit,
+    onChangePasscode: @Composable () -> Unit
 ) {
     BackHandler { onBack() }
 
@@ -566,231 +573,895 @@ fun SettingsScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    var lockOnScreenOff by remember { mutableStateOf(Prefs.lockOnScreenOff(ctx)) }
+
+    var destination by rememberSaveable { mutableStateOf(SettingsDestination.Home) }
+    var pendingPermissionFocus by rememberSaveable { mutableStateOf<PermissionEntry?>(null) }
+
+    val overlaySettingsIntent = remember(ctx.packageName) {
+        {
+            PermissionEscortManager.beginSession(ctx, PermissionEscortType.Overlay)
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:${ctx.packageName}")
+            )
+            ctx.startActivity(intent)
+        }
+    }
+    val usageSettingsIntent = remember {
+        {
+            PermissionEscortManager.beginSession(ctx, PermissionEscortType.Usage)
+            ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        }
+    }
+    val batterySettingsIntent = remember(ctx.packageName) {
+        {
+            PermissionEscortManager.beginSession(ctx, PermissionEscortType.Battery)
+            val intent = Intent(
+                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                Uri.parse("package:${ctx.packageName}")
+            )
+            ctx.startActivity(intent)
+        }
+    }
+
+    val openPermissions = remember {
+        { focus: PermissionEntry? ->
+            pendingPermissionFocus = focus
+            destination = SettingsDestination.Permissions
+        }
+    }
+
+    val topCards = remember(protectionUiState, permissions, themeMode) {
+        buildList {
+            add(
+                SettingsCard(
+                    title = R.string.settings_card_protection_title,
+                    subtitle = R.string.settings_card_protection_subtitle,
+                    icon = Icons.Rounded.Shield,
+                    status = if (protectionUiState.protectionEnabled && permissions.ready) {
+                        R.string.status_active
+                    } else {
+                        R.string.status_paused
+                    },
+                    destination = SettingsDestination.Protection
+                )
+            )
+            add(
+                SettingsCard(
+                    title = R.string.settings_card_lock_behavior_title,
+                    subtitle = R.string.settings_card_lock_behavior_subtitle,
+                    icon = Icons.Rounded.LockClock,
+                    destination = SettingsDestination.LockBehavior
+                )
+            )
+            add(
+                SettingsCard(
+                    title = R.string.settings_card_permissions_title,
+                    subtitle = R.string.settings_card_permissions_subtitle,
+                    icon = Icons.Rounded.Security,
+                    status = if (permissions.ready) R.string.health_check_state_ok else R.string.permission_required_label,
+                    destination = SettingsDestination.Permissions
+                )
+            )
+            add(
+                SettingsCard(
+                    title = R.string.settings_card_system_title,
+                    subtitle = R.string.settings_card_system_subtitle,
+                    icon = Icons.Rounded.SettingsApplications,
+                    destination = SettingsDestination.System
+                )
+            )
+            add(
+                SettingsCard(
+                    title = R.string.settings_card_about_title,
+                    subtitle = R.string.settings_card_about_subtitle,
+                    icon = Icons.Rounded.Info,
+                    destination = SettingsDestination.About
+                )
+            )
+        }
+    }
+
+    val orderedCards = remember(topCards, permissions.ready) {
+        if (!permissions.ready) {
+            val permCard = topCards.first { it.destination == SettingsDestination.Permissions }
+            listOf(permCard) + topCards.filter { it.destination != SettingsDestination.Permissions }
+        } else {
+            topCards
+        }
+    }
+
+    when (destination) {
+        SettingsDestination.Home -> SettingsHome(
+            cards = orderedCards,
+            onCardClick = { destination = it },
+            modifier = Modifier
+                .fillMaxSize()
+                .background(cs.background)
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+        )
+
+        SettingsDestination.Protection -> ProtectionSettingsScreen(
+            onBack = { destination = SettingsDestination.Home },
+            state = protectionUiState,
+            permissions = permissions,
+            onToggle = { enabled ->
+                if (enabled && !permissions.ready) {
+                    val focus = when {
+                        !permissions.overlayGranted -> PermissionEntry.Overlay
+                        !permissions.usageGranted -> PermissionEntry.Usage
+                        else -> PermissionEntry.Battery
+                    }
+                    openPermissions(focus)
+                } else {
+                    protectionViewModel.setProtectionEnabled(enabled)
+                }
+            },
+            onChangePasscode = onChangePasscode,
+            onRequestOverlay = overlaySettingsIntent,
+            onRequestUsage = usageSettingsIntent,
+            onRequestBattery = batterySettingsIntent,
+            useBiometric = useBiometric,
+            onBiometricToggle = onBiometricToggle,
+            onNavigatePermissions = { openPermissions(null) }
+        )
+
+        SettingsDestination.LockBehavior -> LockBehaviorSettingsScreen(
+            onBack = { destination = SettingsDestination.Home },
+            ctx = ctx
+        )
+
+        SettingsDestination.Permissions -> PermissionsSettingsScreen(
+            onBack = { destination = SettingsDestination.Home },
+            permissions = permissions,
+            healthCheckResult = protectionUiState.healthCheckResult,
+            healthCheckInProgress = protectionUiState.healthCheckInProgress,
+            onRunCheck = { protectionViewModel.runHealthCheck() },
+            onRequestOverlay = overlaySettingsIntent,
+            onRequestUsage = usageSettingsIntent,
+            onRequestBattery = batterySettingsIntent,
+            focus = pendingPermissionFocus,
+            onClearFocus = { pendingPermissionFocus = null }
+        )
+
+        SettingsDestination.System -> SystemSettingsScreen(
+            onBack = { destination = SettingsDestination.Home },
+            ctx = ctx,
+            themeMode = themeMode,
+            onThemeChange = onThemeChange
+        )
+
+        SettingsDestination.About -> AboutSettingsScreen(
+            onBack = { destination = SettingsDestination.Home },
+            ctx = ctx
+        )
+    }
+}
+
+private enum class SettingsDestination { Home, Protection, LockBehavior, Permissions, System, About }
+
+private enum class PermissionEntry { Overlay, Usage, Battery }
+
+private data class SettingsCard(
+    @StringRes val title: Int,
+    @StringRes val subtitle: Int,
+    val icon: ImageVector,
+    @StringRes val status: Int? = null,
+    val destination: SettingsDestination
+)
+
+@Composable
+private fun SettingsHome(
+    cards: List<SettingsCard>,
+    onCardClick: (SettingsDestination) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val cs = MaterialTheme.colorScheme
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(cards) { card ->
+            PaletteCard(
+                title = stringResource(card.title),
+                subtitle = stringResource(card.subtitle),
+                icon = card.icon,
+                status = card.status?.let { stringResource(it) },
+                onClick = { onCardClick(card.destination) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PaletteCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    status: String? = null,
+    onClick: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    ElevatedCard(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.elevatedCardColors(containerColor = cs.surfaceContainerHigh),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp, pressedElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, tint = cs.primary, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = cs.onSurface)
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+            }
+            if (status != null) {
+                StatusChip(label = status)
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                contentDescription = null,
+                tint = cs.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsTopBar(@StringRes title: Int, onBack: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    TopAppBar(
+        title = { Text(stringResource(title), color = cs.onSurface) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
+            }
+        }
+    )
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ProtectionSettingsScreen(
+    onBack: () -> Unit,
+    state: ProtectionUiState,
+    permissions: PermissionSnapshot,
+    onToggle: (Boolean) -> Unit,
+    onRequestOverlay: () -> Unit,
+    onRequestUsage: () -> Unit,
+    onRequestBattery: () -> Unit,
+    useBiometric: Boolean,
+    onBiometricToggle: (Boolean) -> Unit,
+    onNavigatePermissions: () -> Unit,
+    onChangePasscode: @Composable () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    val statusLabel = if (state.protectionEnabled && permissions.ready) {
+        stringResource(R.string.status_active)
+    } else {
+        stringResource(R.string.status_paused)
+    }
+
+    Scaffold(topBar = { SettingsTopBar(R.string.settings_card_protection_title, onBack) }) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                ElevatedCard(
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.elevatedCardColors(containerColor = cs.surfaceContainerHigh),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp, pressedElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Rounded.Shield, contentDescription = null, tint = cs.primary)
+                            Spacer(Modifier.width(14.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.protection_settings_title), color = cs.onSurface, style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.protection_settings_description), color = cs.onSurfaceVariant)
+                            }
+                            StatusChip(label = statusLabel)
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(stringResource(R.string.protection_toggle_title), color = cs.onSurface)
+                                Text(
+                                    text = stringResource(if (state.protectionEnabled) R.string.protection_service_running else R.string.protection_service_not_running),
+                                    color = cs.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Switch(
+                                checked = state.protectionEnabled,
+                                onCheckedChange = onToggle,
+                                colors = SwitchDefaults.colors(
+                                    checkedBorderColor = Color.Transparent,
+                                    checkedThumbColor = cs.onPrimary,
+                                    checkedTrackColor = cs.primary,
+                                    uncheckedThumbColor = cs.onSurfaceVariant,
+                                    uncheckedTrackColor = cs.surfaceVariant,
+                                    uncheckedBorderColor = Color.Transparent
+                                )
+                            )
+                        }
+
+                        if (!permissions.ready) {
+                            PermissionRequestList(
+                                permissions = permissions,
+                                onRequestOverlay = onRequestOverlay,
+                                onRequestUsage = onRequestUsage,
+                                onRequestBattery = onRequestBattery,
+                                modifier = Modifier.fillMaxWidth(),
+                                showGranted = false
+                            )
+                            TextButton(onClick = onNavigatePermissions, modifier = Modifier.align(Alignment.End)) {
+                                Text(stringResource(R.string.protection_manage_in_settings))
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                ElevatedCard(
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.elevatedCardColors(containerColor = cs.surfaceContainerHigh),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp, pressedElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        onChangePasscode()
+                        HorizontalDivider(color = cs.outlineVariant)
+                        SettingToggleRow(
+                            icon = Icons.Outlined.Fingerprint,
+                            title = stringResource(R.string.use_fingerprint),
+                            checked = useBiometric,
+                            onCheckedChange = onBiometricToggle
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun LockBehaviorSettingsScreen(
+    onBack: () -> Unit,
+    ctx: Context
+) {
+    val cs = MaterialTheme.colorScheme
     var timerExpanded by remember { mutableStateOf(false) }
     var selectedTimerMillis by remember { mutableLongStateOf(Prefs.getLockTimerMillis(ctx)) }
     val timerOptions = remember { lockTimerOptions }
     val selectedTimerOption = remember(selectedTimerMillis) {
         timerOptions.firstOrNull { it.durationMillis == selectedTimerMillis } ?: timerOptions.first()
     }
+    var lockOnScreenOff by remember { mutableStateOf(Prefs.lockOnScreenOff(ctx)) }
+
+    Scaffold(topBar = { SettingsTopBar(R.string.settings_card_lock_behavior_title, onBack) }) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                ElevatedCard(
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.elevatedCardColors(containerColor = cs.surfaceContainerHigh)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(stringResource(R.string.settings_card_lock_behavior_subtitle), color = cs.onSurfaceVariant)
+                        ExposedDropdownMenuBox(expanded = timerExpanded, onExpandedChange = { timerExpanded = it }) {
+                            OutlinedTextField(
+                                value = stringResource(selectedTimerOption.titleRes),
+                                onValueChange = {},
+                                readOnly = true,
+                                leadingIcon = { Icon(Icons.Rounded.Timer, contentDescription = null) },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timerExpanded) },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                label = { Text(stringResource(R.string.lock_timer_label)) },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedBorderColor = cs.outline,
+                                    focusedBorderColor = cs.primary,
+                                    focusedLabelColor = cs.primary,
+                                    cursorColor = cs.primary
+                                )
+                            )
+                            ExposedDropdownMenu(expanded = timerExpanded, onDismissRequest = { timerExpanded = false }) {
+                                timerOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(option.titleRes)) },
+                                        onClick = {
+                                            selectedTimerMillis = option.durationMillis
+                                            Prefs.setLockTimerMillis(ctx, option.durationMillis)
+                                            timerExpanded = false
+                                        },
+                                        trailingIcon = {
+                                            if (option == selectedTimerOption) {
+                                                Icon(Icons.Outlined.Check, contentDescription = null)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        SettingToggleRow(
+                            icon = Icons.Outlined.ScreenLockPortrait,
+                            title = stringResource(R.string.lock_immediately),
+                            subtitle = stringResource(R.string.lock_immediately_description),
+                            checked = lockOnScreenOff,
+                            onCheckedChange = { checked ->
+                                lockOnScreenOff = checked
+                                Prefs.setLockOnScreenOff(ctx, checked)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun PermissionsSettingsScreen(
+    onBack: () -> Unit,
+    permissions: PermissionSnapshot,
+    healthCheckResult: HealthCheckResult?,
+    healthCheckInProgress: Boolean,
+    onRunCheck: () -> Unit,
+    onRequestOverlay: () -> Unit,
+    onRequestUsage: () -> Unit,
+    onRequestBattery: () -> Unit,
+    focus: PermissionEntry?,
+    onClearFocus: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    val overlayRequester = remember { BringIntoViewRequester() }
+    val usageRequester = remember { BringIntoViewRequester() }
+    val batteryRequester = remember { BringIntoViewRequester() }
+
+    LaunchedEffect(focus) {
+        val requester = when (focus) {
+            PermissionEntry.Overlay -> overlayRequester
+            PermissionEntry.Usage -> usageRequester
+            PermissionEntry.Battery -> batteryRequester
+            null -> null
+        }
+        requester?.let {
+            it.bringIntoView()
+            onClearFocus()
+        }
+    }
+
+    val overlayOk = healthCheckResult?.overlayGranted ?: permissions.overlayGranted
+    val usageOk = healthCheckResult?.usageGranted ?: permissions.usageGranted
+    val batteryOk = healthCheckResult?.batteryUnrestricted ?: permissions.batteryUnrestricted
+
+    Scaffold(topBar = { SettingsTopBar(R.string.settings_card_permissions_title, onBack) }) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                ElevatedCard(
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.elevatedCardColors(containerColor = cs.surfaceContainerHigh)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(stringResource(R.string.settings_permissions_intro), color = cs.onSurfaceVariant)
+                        Button(
+                            onClick = onRunCheck,
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !healthCheckInProgress
+                        ) {
+                            Text(
+                                if (healthCheckInProgress) stringResource(R.string.permissions_check_running)
+                                else stringResource(R.string.permissions_check_now)
+                            )
+                        }
+
+                        PermissionStatusRow(
+                            icon = Icons.Rounded.Visibility,
+                            title = stringResource(R.string.permission_overlay_title),
+                            statusLabel = if (overlayOk) stringResource(R.string.health_check_state_ok) else stringResource(R.string.permission_required_label),
+                            statusColor = if (overlayOk) cs.primary else cs.error,
+                            onAction = onRequestOverlay,
+                            modifier = Modifier.bringIntoViewRequester(overlayRequester)
+                        )
+                        PermissionStatusRow(
+                            icon = Icons.Rounded.DataUsage,
+                            title = stringResource(R.string.permission_usage_title),
+                            statusLabel = if (usageOk) stringResource(R.string.health_check_state_ok) else stringResource(R.string.permission_required_label),
+                            statusColor = if (usageOk) cs.primary else cs.error,
+                            onAction = onRequestUsage,
+                            modifier = Modifier.bringIntoViewRequester(usageRequester)
+                        )
+                        PermissionStatusRow(
+                            icon = Icons.Rounded.BatterySaver,
+                            title = stringResource(R.string.permission_battery_title),
+                            statusLabel = if (batteryOk) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_restricted),
+                            statusColor = if (batteryOk) cs.primary else cs.error,
+                            onAction = onRequestBattery,
+                            modifier = Modifier.bringIntoViewRequester(batteryRequester)
+                        )
+
+                        AnimatedVisibility(overlayOk && usageOk && batteryOk) {
+                            SuccessBanner(text = stringResource(R.string.permissions_all_granted))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun SystemSettingsScreen(
+    onBack: () -> Unit,
+    ctx: Context,
+    themeMode: ThemeMode,
+    onThemeChange: (ThemeMode) -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
     var languageExpanded by remember { mutableStateOf(false) }
     var selectedLanguageTag by remember { mutableStateOf(Prefs.getLanguageCode(ctx)) }
     val languageOptions = remember { LocaleManager.supportedLanguages }
-    val selectedLanguageOption = remember(selectedLanguageTag) {
-        LocaleManager.findOption(selectedLanguageTag)
+    val selectedLanguageOption = remember(selectedLanguageTag) { LocaleManager.findOption(selectedLanguageTag) }
+
+    Scaffold(topBar = { SettingsTopBar(R.string.settings_card_system_title, onBack) }) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                ElevatedCard(
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.elevatedCardColors(containerColor = cs.surfaceContainerHigh)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(stringResource(R.string.settings_card_system_subtitle), color = cs.onSurfaceVariant)
+                        ExposedDropdownMenuBox(expanded = languageExpanded, onExpandedChange = { languageExpanded = it }) {
+                            OutlinedTextField(
+                                value = stringResource(selectedLanguageOption.labelRes),
+                                onValueChange = {},
+                                readOnly = true,
+                                leadingIcon = { Icon(Icons.Rounded.Language, contentDescription = null) },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded) },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                label = { Text(stringResource(R.string.settings_language_label)) },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedBorderColor = cs.outline,
+                                    focusedBorderColor = cs.primary,
+                                    focusedLabelColor = cs.primary,
+                                    cursorColor = cs.primary
+                                )
+                            )
+                            ExposedDropdownMenu(expanded = languageExpanded, onDismissRequest = { languageExpanded = false }) {
+                                languageOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(option.labelRes)) },
+                                        onClick = {
+                                            selectedLanguageTag = option.tag
+                                            Prefs.setLanguageCode(ctx, option.tag)
+                                            LocaleManager.setAppLanguage(ctx, option.tag)
+                                            languageExpanded = false
+                                        },
+                                        trailingIcon = {
+                                            if (option.tag == selectedLanguageTag) {
+                                                Icon(Icons.Outlined.Check, contentDescription = null)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.settings_theme_label), color = cs.onSurface, style = MaterialTheme.typography.titleMedium)
+                            ThemeMode.entries.forEach { mode ->
+                                SettingToggleRow(
+                                    icon = when (mode) {
+                                        ThemeMode.SYSTEM -> Icons.Rounded.SettingsSuggest
+                                        ThemeMode.LIGHT -> Icons.Rounded.LightMode
+                                        ThemeMode.DARK -> Icons.Rounded.DarkMode
+                                    },
+                                    title = stringResource(
+                                        when (mode) {
+                                            ThemeMode.SYSTEM -> R.string.theme_system
+                                            ThemeMode.LIGHT -> R.string.theme_light
+                                            ThemeMode.DARK -> R.string.theme_dark
+                                        }
+                                    ),
+                                    checked = themeMode == mode,
+                                    onCheckedChange = { onThemeChange(mode) },
+                                    showSwitch = false,
+                                    trailingContent = {
+                                        if (themeMode == mode) {
+                                            Icon(Icons.Outlined.Check, contentDescription = null, tint = cs.primary)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+}
 
-    LazyColumn(
+@Composable
+private fun AboutSettingsScreen(
+    onBack: () -> Unit,
+    ctx: Context
+) {
+    val cs = MaterialTheme.colorScheme
+    val uriHandler = LocalUriHandler.current
+
+    Scaffold(topBar = { SettingsTopBar(R.string.settings_card_about_title, onBack) }) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                ElevatedCard(
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.elevatedCardColors(containerColor = cs.surfaceContainerHigh)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        SettingRow(
+                            icon = Icons.Rounded.Info,
+                            title = stringResource(R.string.about_app_version_label),
+                            subtitle = getAppVersion(ctx)
+                        )
+                        HorizontalDivider(color = cs.outlineVariant)
+                        SettingRow(
+                            icon = Icons.Rounded.VerifiedUser,
+                            title = stringResource(R.string.about_developer_label),
+                            subtitle = stringResource(R.string.developer_name)
+                        )
+                        SettingRow(
+                            icon = Icons.Rounded.PrivacyTip,
+                            title = stringResource(R.string.privacy_policy_label),
+                            subtitle = stringResource(R.string.privacy_policy_url),
+                            onClick = { uriHandler.openUri(ctx.getString(R.string.privacy_policy_url)) },
+                            showChevron = true
+                        )
+                        SettingRow(
+                            icon = Icons.Rounded.Description,
+                            title = stringResource(R.string.terms_of_use_label),
+                            subtitle = stringResource(R.string.terms_of_use_url),
+                            onClick = { uriHandler.openUri(ctx.getString(R.string.terms_of_use_url)) },
+                            showChevron = true
+                        )
+                        SettingRow(
+                            icon = Icons.Rounded.SupportAgent,
+                            title = stringResource(R.string.support_label),
+                            subtitle = stringResource(R.string.support_url),
+                            onClick = { uriHandler.openUri(ctx.getString(R.string.support_url)) },
+                            showChevron = true
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String? = null,
+    showChevron: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    trailingContent: (@Composable () -> Unit)? = null
+) {
+    val cs = MaterialTheme.colorScheme
+    Row(
         modifier = Modifier
-            .fillMaxSize()
-            .background(cs.background)
-            .statusBarsPadding()
-            .navigationBarsPadding(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp) // spacing between items
+            .fillMaxWidth()
+            .let { base -> if (onClick != null) base.clickable { onClick() } else base }
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // --- Protection
-        item { Text(stringResource(R.string.settings_section_protection), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
-        item {
-            ProtectionSettingsCard(
-                state = protectionUiState,
-                permissions = permissions,
-                onToggle = { enabled ->
-                    if (enabled && !permissions.ready) {
-                        Toast.makeText(ctx, R.string.permission_missing_toast, Toast.LENGTH_SHORT).show()
-                    }
-                    protectionViewModel.setProtectionEnabled(enabled)
-                },
-                onRequestOverlay = {
-                    val intent = Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:${ctx.packageName}")
-                    )
-                    ctx.startActivity(intent)
-                },
-                onRequestUsage = { ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) },
-                onRequestBattery = {
-                    PermissionEscortManager.beginSession(ctx, PermissionEscortType.Battery)
-                    val intent = Intent(
-                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                        Uri.parse("package:${ctx.packageName}")
-                    )
-                    ctx.startActivity(intent)
-                },
-                onRunHealthCheck = { protectionViewModel.runHealthCheck() }
-            )
+        Icon(icon, contentDescription = null, tint = cs.primary)
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = cs.onSurface)
+            if (subtitle != null) {
+                Text(subtitle, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
         }
-        item { HorizontalDivider(color = cs.outlineVariant) }
-
-        // --- Security
-        item { Text(stringResource(R.string.settings_section_security), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
-        item { ChangePasswordRow() }
-        item {
-            ListItem(
-                leadingContent = { Icon(Icons.Outlined.Fingerprint, null, tint = cs.onBackground) },
-                headlineContent = { Text(stringResource(R.string.use_fingerprint), color = cs.onBackground) },
-                trailingContent = {
-                    Switch(
-                        checked = useBiometric,
-                        onCheckedChange = onBiometricToggle,
-                        colors = SwitchDefaults.colors(
-                            checkedBorderColor = Color.Transparent,
-                            checkedThumbColor = cs.onPrimary,
-                            checkedTrackColor = cs.primary,
-                            uncheckedThumbColor = cs.onSurfaceVariant,
-                            uncheckedTrackColor = cs.surfaceVariant,
-                            uncheckedBorderColor = Color.Transparent
-                        )
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
+        trailingContent?.invoke()
+        if (showChevron) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = cs.onSurfaceVariant)
         }
-        item { HorizontalDivider(color = cs.outlineVariant) }
+    }
+}
 
-        // --- Lock timers
-        item { Text(stringResource(R.string.settings_section_lock_timers), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
-        item {
-            ExposedDropdownMenuBox(expanded = timerExpanded, onExpandedChange = { timerExpanded = it }) {
-                OutlinedTextField(
-                    value = stringResource(selectedTimerOption.titleRes),
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timerExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = cs.surface,
-                        unfocusedContainerColor = cs.surface,
-                        disabledContainerColor = cs.surface,
-                        focusedIndicatorColor = cs.primary,
-                        unfocusedIndicatorColor = cs.outline,
-                        disabledIndicatorColor = Color.Transparent
-                    ),
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.settings_select_timer)) }
+@Composable
+private fun SettingToggleRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    showSwitch: Boolean = true,
+    trailingContent: (@Composable () -> Unit)? = null
+) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .let { base ->
+                if (showSwitch) base else base.clickable { onCheckedChange(!checked) }
+            },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = cs.primary)
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = cs.onSurface)
+            if (subtitle != null) {
+                Text(subtitle, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        trailingContent?.invoke()
+        if (showSwitch) {
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    checkedBorderColor = Color.Transparent,
+                    checkedThumbColor = cs.onPrimary,
+                    checkedTrackColor = cs.primary,
+                    uncheckedThumbColor = cs.onSurfaceVariant,
+                    uncheckedTrackColor = cs.surfaceVariant,
+                    uncheckedBorderColor = Color.Transparent
                 )
-                ExposedDropdownMenu(expanded = timerExpanded, onDismissRequest = { timerExpanded = false }) {
-                    timerOptions.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(option.titleRes)) },
-                            onClick = {
-                                timerExpanded = false
-                                selectedTimerMillis = option.durationMillis
-                                Prefs.setLockTimerMillis(ctx, option.durationMillis)
-                                Prefs.setSessionUnlocked(ctx, null, null)
-                            }
-                        )
-                    }
-                }
-            }
-        }
-        item {
-            Text(
-                text = stringResource(selectedTimerOption.descriptionRes),
-                color = cs.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
             )
         }
-        item {
-            ListItem(
-                leadingContent = { Icon(Icons.Outlined.ScreenLockRotation, null, tint = cs.onBackground) },
-                headlineContent = { Text(stringResource(R.string.lock_screen_off_title), color = cs.onBackground) },
-                supportingContent = {
-                    Text(stringResource(R.string.lock_screen_off_description), color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                },
-                trailingContent = {
-                    Switch(
-                        checked = lockOnScreenOff,
-                        onCheckedChange = { enabled ->
-                            lockOnScreenOff = enabled
-                            Prefs.setLockOnScreenOff(ctx, enabled)
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedBorderColor = Color.Transparent,
-                            checkedThumbColor = cs.onPrimary,
-                            checkedTrackColor = cs.primary,
-                            uncheckedThumbColor = cs.onSurfaceVariant,
-                            uncheckedTrackColor = cs.surfaceVariant,
-                            uncheckedBorderColor = Color.Transparent
-                        )
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+    }
+}
 
-        item { HorizontalDivider(color = cs.outlineVariant) }
-
-        // --- Language
-        item { Text(stringResource(R.string.settings_section_language), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
-        item {
-            val languageLabel = stringResource(selectedLanguageOption.labelRes)
-            ExposedDropdownMenuBox(expanded = languageExpanded, onExpandedChange = { languageExpanded = it }) {
-                OutlinedTextField(
-                    value = languageLabel,
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = cs.surface,
-                        unfocusedContainerColor = cs.surface,
-                        disabledContainerColor = cs.surface,
-                        focusedIndicatorColor = cs.primary,
-                        unfocusedIndicatorColor = cs.outline,
-                        disabledIndicatorColor = Color.Transparent
-                    ),
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.app_language_label)) }
-                )
-                ExposedDropdownMenu(expanded = languageExpanded, onDismissRequest = { languageExpanded = false }) {
-                    languageOptions.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(option.labelRes)) },
-                            onClick = {
-                                languageExpanded = false
-                                selectedLanguageTag = option.tag
-                                LocaleManager.setAppLanguage(ctx, option.tag)
-                            }
-                        )
-                    }
-                }
-            }
+@Composable
+private fun PermissionStatusRow(
+    icon: ImageVector,
+    title: String,
+    statusLabel: String,
+    statusColor: Color,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val cs = MaterialTheme.colorScheme
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = cs.primary)
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = cs.onSurface)
         }
-        item { HorizontalDivider(color = cs.outlineVariant) }
-
-        // --- Theme
-        item { Text(stringResource(R.string.settings_section_theme), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
-        item {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = themeMode == ThemeMode.SYSTEM, onClick = { onThemeChange(ThemeMode.SYSTEM) })
-                    Text(stringResource(R.string.theme_system), color = cs.onBackground)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = themeMode == ThemeMode.LIGHT, onClick = { onThemeChange(ThemeMode.LIGHT) })
-                    Text(stringResource(R.string.theme_light), color = cs.onBackground)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = themeMode == ThemeMode.DARK, onClick = { onThemeChange(ThemeMode.DARK) })
-                    Text(stringResource(R.string.theme_dark), color = cs.onBackground)
-                }
-            }
+        StatusChip(label = statusLabel, containerColor = statusColor.copy(alpha = 0.16f), contentColor = statusColor)
+        Spacer(Modifier.width(12.dp))
+        TextButton(onClick = onAction) {
+            Text(stringResource(R.string.permission_button_open))
         }
-        item { HorizontalDivider(color = cs.outlineVariant) }
+    }
+}
 
-        // --- About
-        item { Text(stringResource(R.string.settings_section_about), style = MaterialTheme.typography.titleMedium, color = cs.primary) }
-        item {
-            ElevatedCard(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
-                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    LabeledValue(label = stringResource(R.string.about_app_version_label), value = getAppVersion(ctx))
-                    HorizontalDivider(color = cs.outlineVariant)
-                    LabeledValue(label = stringResource(R.string.about_developer_label), value = stringResource(R.string.developer_name))
-                }
-            }
+@Composable
+private fun StatusChip(label: String, containerColor: Color? = null, contentColor: Color? = null) {
+    val cs = MaterialTheme.colorScheme
+    AssistChip(
+        onClick = {},
+        enabled = false,
+        label = { Text(label) },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = containerColor ?: cs.surfaceVariant,
+            disabledContainerColor = containerColor ?: cs.surfaceVariant,
+            disabledLabelColor = contentColor ?: cs.onSurfaceVariant,
+            labelColor = contentColor ?: cs.onSurfaceVariant
+        )
+    )
+}
+
+@Composable
+private fun SuccessBanner(text: String) {
+    val cs = MaterialTheme.colorScheme
+    Surface(
+        color = cs.primaryContainer,
+        contentColor = cs.onPrimaryContainer,
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 4.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = cs.onPrimaryContainer)
+            Text(text)
         }
-        item { Spacer(Modifier.height(8.dp)) } // small bottom buffer
     }
 }
 
@@ -1254,201 +1925,6 @@ private fun PermissionGate(
     }
 }
 
-@Composable
-private fun ProtectionSettingsCard(
-    state: ProtectionUiState,
-    permissions: PermissionSnapshot,
-    onToggle: (Boolean) -> Unit,
-    onRequestOverlay: () -> Unit,
-    onRequestUsage: () -> Unit,
-    onRequestBattery: () -> Unit,
-    onRunHealthCheck: () -> Unit
-) {
-    val cs = MaterialTheme.colorScheme
-    val toggleChecked = state.protectionEnabled || state.pendingEnable
-    val ready = permissions.ready
-    var showBatteryDialog by remember { mutableStateOf(false) }
-    val statusText = when {
-        state.protectionEnabled && ready -> stringResource(R.string.protection_status_running)
-        state.pendingEnable -> stringResource(R.string.protection_status_pending_permissions)
-        !ready -> stringResource(R.string.protection_status_permissions_missing)
-        else -> stringResource(R.string.protection_status_stopped)
-    }
-
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = stringResource(R.string.protection_settings_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = cs.onSurface
-                    )
-                    Text(statusText, color = cs.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                }
-                Switch(
-                    checked = toggleChecked,
-                    onCheckedChange = { enabled ->
-                        if (enabled && !permissions.batteryUnrestricted) {
-                            showBatteryDialog = true
-                            return@Switch
-                        }
-                        onToggle(enabled)
-                    },
-                    enabled = ready || toggleChecked,
-                    colors = SwitchDefaults.colors(
-                        checkedBorderColor = Color.Transparent,
-                        checkedThumbColor = cs.onPrimary,
-                        checkedTrackColor = cs.primary,
-                        uncheckedThumbColor = cs.onSurfaceVariant,
-                        uncheckedTrackColor = cs.surfaceVariant,
-                        uncheckedBorderColor = Color.Transparent
-                    )
-                )
-                if (showBatteryDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showBatteryDialog = false },
-                        title = { Text(stringResource(R.string.battery_permission_dialog_title)) },
-                        text = { Text(stringResource(R.string.battery_permission_dialog_body)) },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                showBatteryDialog = false
-                                onRequestBattery()
-                            }) { Text(stringResource(R.string.permission_button_open)) }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showBatteryDialog = false }) {
-                                Text(stringResource(R.string.action_cancel))
-                            }
-                        }
-                    )
-                }
-            }
-
-            Text(
-                text = stringResource(R.string.protection_settings_description),
-                color = cs.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            if (!ready) {
-                PermissionRequestList(
-                    permissions = permissions,
-                    onRequestOverlay = onRequestOverlay,
-                    onRequestUsage = onRequestUsage,
-                    onRequestBattery = onRequestBattery
-                )
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = onRunHealthCheck,
-                    enabled = !state.healthCheckInProgress,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    val label = if (state.healthCheckInProgress) {
-                        stringResource(R.string.health_check_running)
-                    } else {
-                        stringResource(R.string.health_check_button)
-                    }
-                    Text(label)
-                }
-
-                state.healthCheckResult?.let { result ->
-                    HealthCheckSummary(result = result)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HealthCheckSummary(result: HealthCheckResult) {
-    val cs = MaterialTheme.colorScheme
-    val passed = result.ready && result.serviceRunning && result.overlayTestPassed
-    val statusText = if (passed) {
-        stringResource(R.string.health_check_passed)
-    } else {
-        stringResource(R.string.health_check_needs_attention)
-    }
-
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(statusText, color = if (passed) cs.primary else cs.error, style = MaterialTheme.typography.titleSmall)
-            Text(
-                text = stringResource(
-                    R.string.health_check_detail_overlay,
-                    result.overlayGranted.toAttentionLabel()
-                ),
-                color = cs.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(
-                    R.string.health_check_detail_usage,
-                    result.usageGranted.toAttentionLabel()
-                ),
-                color = cs.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(
-                    R.string.health_check_detail_service,
-                    result.serviceRunning.toRunningLabel()
-                ),
-                color = cs.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(
-                    R.string.health_check_detail_overlay_draw,
-                    result.overlayTestPassed.toOverlayProbeLabel()
-                ),
-                color = cs.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(
-                    R.string.health_check_detail_battery,
-                    result.batteryUnrestricted.toBatteryLabel()
-                ),
-                color = cs.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun Boolean.toAttentionLabel(): String =
-    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_attention)
-
-@Composable
-private fun Boolean.toRunningLabel(): String =
-    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_not_running)
-
-@Composable
-private fun Boolean.toOverlayProbeLabel(): String =
-    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_failed)
-
-@Composable
-private fun Boolean.toBatteryLabel(): String =
-    if (this) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_restricted)
 
 class AppListViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(AppListUiState())
@@ -1546,8 +2022,8 @@ private fun ChangePasswordRow() {
     ListItem(
         headlineContent = { Text(changePasscodeLabel) },
         supportingContent = { Text(changePasscodeMessage) },
-        leadingContent = { Icon(Icons.Outlined.Lock, contentDescription = null) }, // use Lock for widest compatibility
-        trailingContent = { Icon(Icons.Outlined.ChevronRight, contentDescription = null) },
+        leadingContent = { Icon(Icons.Rounded.Password, contentDescription = null) },
+        trailingContent = { Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null) },
         modifier = Modifier
             .fillMaxWidth()
             .clickable { showDialog = true }

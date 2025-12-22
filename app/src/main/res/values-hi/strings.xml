@@ -30,6 +30,18 @@
     <string name="settings_section_language">ऐप भाषा</string>
     <string name="settings_section_theme">थीम</string>
     <string name="settings_section_about">परिचय</string>
+    <string name="settings_card_protection_title">संरक्षण और सुरक्षा</string>
+    <string name="settings_card_protection_subtitle">सुरक्षा चालू करें और अनलॉक करने का तरीका प्रबंधित करें।</string>
+    <string name="settings_card_lock_behavior_title">लॉक व्यवहार</string>
+    <string name="settings_card_lock_behavior_subtitle">लॉक कब दिखाई दे.</string>
+    <string name="settings_card_permissions_title">अनुमतियाँ</string>
+    <string name="settings_card_permissions_subtitle">विश्वसनीय सुरक्षा के लिए आवश्यक।</string>
+    <string name="settings_card_system_title">सिस्टम</string>
+    <string name="settings_card_system_subtitle">भाषा और रूप।</string>
+    <string name="settings_card_about_title">परिचय और सहायता</string>
+    <string name="settings_card_about_subtitle">संस्करण, गोपनीयता, और मदद।</string>
+    <string name="status_active">सक्रिय</string>
+    <string name="status_paused">रुका हुआ</string>
 
     <!-- Settings content -->
     <string name="use_fingerprint">फ़िंगरप्रिंट उपयोग करें</string>
@@ -43,6 +55,9 @@
     <string name="language_spanish">स्पेनिश</string>
     <string name="language_french">फ़्रेंच</string>
     <string name="language_hindi">हिंदी</string>
+    <string name="settings_language_label">ऐप भाषा</string>
+    <string name="settings_language_use_device">डिवाइस उपयोग करें</string>
+    <string name="settings_theme_label">थीम</string>
     <string name="theme_system">सिस्टम</string>
     <string name="theme_light">हल्का</string>
     <string name="theme_dark">गहरा</string>
@@ -147,6 +162,17 @@
     <string name="health_check_state_restricted">सीमित</string>
     <string name="battery_restricted_title">सुरक्षा रुकी है</string>
     <string name="battery_restricted_body">बैटरी प्रतिबंधों ने AdamAppLock को रोक दिया। सुरक्षा फिर से शुरू करने के लिए असीमित पृष्ठभूमि उपयोग सक्षम करें.</string>
+    <string name="permissions_check_now">अभी अनुमति जांच चलाएं</string>
+    <string name="permissions_check_running">अनुमतियाँ जांची जा रही हैं…</string>
+    <string name="permissions_all_granted">सभी आवश्यक अनुमतियाँ मिल गई हैं।</string>
+    <string name="settings_permissions_intro">विश्वसनीय सुरक्षा के लिए आवश्यक।</string>
+    <string name="lock_immediately_description">स्क्रीन बंद होते ही तुरंत लॉक करें।</string>
+    <string name="privacy_policy_label">गोपनीयता नीति</string>
+    <string name="terms_of_use_label">उपयोग की शर्तें</string>
+    <string name="support_label">सहायता</string>
+    <string name="privacy_policy_url">https://boda7s.github.io/AppLock/privacy/</string>
+    <string name="terms_of_use_url">https://boda7s.github.io/AppLock/terms/</string>
+    <string name="support_url">https://github.com/BoDa7s/AppLock/issues</string>
 
     <!-- Misc -->
     <string name="version_unknown">अज्ञात</string>

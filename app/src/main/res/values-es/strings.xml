@@ -30,6 +30,18 @@
     <string name="settings_section_language">Idioma de la aplicación</string>
     <string name="settings_section_theme">Tema</string>
     <string name="settings_section_about">Acerca de</string>
+    <string name="settings_card_protection_title">Protección y seguridad</string>
+    <string name="settings_card_protection_subtitle">Activa la protección y gestiona cómo desbloqueas.</string>
+    <string name="settings_card_lock_behavior_title">Comportamiento del bloqueo</string>
+    <string name="settings_card_lock_behavior_subtitle">Cuándo aparece el bloqueo.</string>
+    <string name="settings_card_permissions_title">Permisos</string>
+    <string name="settings_card_permissions_subtitle">Requeridos para una protección fiable.</string>
+    <string name="settings_card_system_title">Sistema</string>
+    <string name="settings_card_system_subtitle">Idioma y apariencia.</string>
+    <string name="settings_card_about_title">Acerca de y soporte</string>
+    <string name="settings_card_about_subtitle">Versión, privacidad y ayuda.</string>
+    <string name="status_active">Activo</string>
+    <string name="status_paused">Pausado</string>
 
     <!-- Settings content -->
     <string name="use_fingerprint">Usar huella digital</string>
@@ -43,6 +55,9 @@
     <string name="language_spanish">Español</string>
     <string name="language_french">Francés</string>
     <string name="language_hindi">Hindi</string>
+    <string name="settings_language_label">Idioma de la app</string>
+    <string name="settings_language_use_device">Usar dispositivo</string>
+    <string name="settings_theme_label">Tema</string>
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
@@ -147,6 +162,17 @@
     <string name="health_check_state_restricted">Restringido</string>
     <string name="battery_restricted_title">Protección en pausa</string>
     <string name="battery_restricted_body">Las restricciones de batería detuvieron AdamAppLock. Habilita el uso en segundo plano sin restricciones para reanudar la protección.</string>
+    <string name="permissions_check_now">Ejecutar verificación de permisos ahora</string>
+    <string name="permissions_check_running">Comprobando permisos…</string>
+    <string name="permissions_all_granted">Todos los permisos requeridos están concedidos.</string>
+    <string name="settings_permissions_intro">Requeridos para una protección fiable.</string>
+    <string name="lock_immediately_description">Bloquear tan pronto se apague la pantalla.</string>
+    <string name="privacy_policy_label">Política de privacidad</string>
+    <string name="terms_of_use_label">Términos de uso</string>
+    <string name="support_label">Soporte</string>
+    <string name="privacy_policy_url">https://boda7s.github.io/AppLock/privacy/</string>
+    <string name="terms_of_use_url">https://boda7s.github.io/AppLock/terms/</string>
+    <string name="support_url">https://github.com/BoDa7s/AppLock/issues</string>
 
     <!-- Misc -->
     <string name="version_unknown">Desconocido</string>
