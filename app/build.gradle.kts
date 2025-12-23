@@ -5,15 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.adamapplock"
+    namespace = "com.awi.lock"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.adamapplock"
+        applicationId = "com.awi.lock"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "3.6"
+        versionCode = 3
+        versionName = "3.7"
         vectorDrawables.useSupportLibrary = true
     }
 

@@ -80,7 +80,7 @@ printf 'sdk.dir=%s/Android/sdk\n' "$HOME" > local.properties
 
 ## Project Facts
 - **App name:** AdamAppLock
-- **Package ID:** `com.example.adamapplock`
+- **Package ID:** `com.awi.lock`
 - **Min SDK / Target SDK:** 26 / 35 (compileSdk = 36)
 - **Android Gradle Plugin:** 8.13.0 (managed via version catalog `libs.versions.toml`)
 - **Gradle Wrapper:** 8.14.3 (see `gradle/wrapper/gradle-wrapper.properties`)
