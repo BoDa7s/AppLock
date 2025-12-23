@@ -102,13 +102,14 @@ import com.example.adamapplock.protection.ProtectionUiState
 import com.example.adamapplock.protection.ProtectionViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.view.WindowManager
-import androidx.compose.foundation.border
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import com.example.adamapplock.lock.AppLockManager
 import com.example.adamapplock.lock.LockScreen
 import com.example.adamapplock.protection.BiometricUnlockActivity
+import android.os.SystemClock
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 
 private enum class AppLockGateState { Loading, Locked, Unlocked }
@@ -127,6 +128,14 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val activity = this@MainActivity
+
+        val splash = installSplashScreen()
+
+        val start = SystemClock.uptimeMillis()
+        splash.setKeepOnScreenCondition {
+            SystemClock.uptimeMillis() - start < 3000L
+        }
+
         setContent {
             val ctx = LocalContext.current
             val repo = remember { PasswordRepository.get(ctx) }
@@ -141,7 +150,8 @@ class MainActivity : AppCompatActivity() {
                 val missingPasscode = !repo.isPasswordSet()
                 needsSetup = missingPasscode
                 if (!missingPasscode) {
-                    lockState = if (AppLockManager.shouldLock(ctx)) AppLockGateState.Locked else AppLockGateState.Unlocked
+                    lockState =
+                        if (AppLockManager.shouldLock(ctx)) AppLockGateState.Locked else AppLockGateState.Unlocked
                 }
             }
 
@@ -152,7 +162,8 @@ class MainActivity : AppCompatActivity() {
                         when (event) {
                             androidx.lifecycle.Lifecycle.Event.ON_RESUME -> {
                                 val lockRequired = AppLockManager.shouldLock(ctx)
-                                lockState = if (lockRequired) AppLockGateState.Locked else AppLockGateState.Unlocked
+                                lockState =
+                                    if (lockRequired) AppLockGateState.Locked else AppLockGateState.Unlocked
                                 if (!lockRequired) {
                                     AppLockManager.markUnlocked(ctx)
                                 }
@@ -188,13 +199,17 @@ class MainActivity : AppCompatActivity() {
                         onDone = {
                             AppLockManager.markUnlocked(ctx)
                             lockState = AppLockGateState.Unlocked
-                            needsSetup = false // setup screen already saved to repo  // flip immediately after save
+                            needsSetup =
+                                false // setup screen already saved to repo  // flip immediately after save
                         }
                     )
 
                     false -> {
                         when (lockState) {
-                            AppLockGateState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            AppLockGateState.Loading -> Box(
+                                Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 CircularProgressIndicator()
                             }
 
@@ -221,7 +236,11 @@ class MainActivity : AppCompatActivity() {
                                     onUnlock = { entered ->
                                         val digits = entered.filter { it.isDigit() }
                                         if (digits.isEmpty()) {
-                                            Toast.makeText(ctx, R.string.passcode_empty_error, Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                ctx,
+                                                R.string.passcode_empty_error,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                             return@LockScreen
                                         }
 
@@ -232,7 +251,11 @@ class MainActivity : AppCompatActivity() {
                                             AppLockManager.markUnlocked(ctx)
                                             lockState = AppLockGateState.Unlocked
                                         } else {
-                                            Toast.makeText(ctx, R.string.passcode_wrong_error, Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                ctx,
+                                                R.string.passcode_wrong_error,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
                                     }
                                 )
@@ -251,7 +274,10 @@ class MainActivity : AppCompatActivity() {
                         val permissions = protectionState.permissions
                         val overlaySettingsIntent = remember(ctx.packageName) {
                             {
-                                PermissionEscortManager.beginSession(ctx, PermissionEscortType.Overlay)
+                                PermissionEscortManager.beginSession(
+                                    ctx,
+                                    PermissionEscortType.Overlay
+                                )
                                 val intent = Intent(
                                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                     Uri.parse("package:${ctx.packageName}")
@@ -261,13 +287,19 @@ class MainActivity : AppCompatActivity() {
                         }
                         val usageSettingsIntent = remember {
                             {
-                                PermissionEscortManager.beginSession(ctx, PermissionEscortType.Usage)
+                                PermissionEscortManager.beginSession(
+                                    ctx,
+                                    PermissionEscortType.Usage
+                                )
                                 ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
                             }
                         }
                         val batterySettingsIntent = remember(ctx.packageName) {
                             {
-                                PermissionEscortManager.beginSession(ctx, PermissionEscortType.Battery)
+                                PermissionEscortManager.beginSession(
+                                    ctx,
+                                    PermissionEscortType.Battery
+                                )
                                 PermissionUtils.openBatterySettings(ctx)
                             }
                         }
@@ -295,7 +327,9 @@ class MainActivity : AppCompatActivity() {
                         ) {
                             TabRow(selectedTabIndex = selectedTab) {
                                 tabs.forEachIndexed { i, t ->
-                                    Tab(selected = selectedTab == i, onClick = { selectedTab = i }) {
+                                    Tab(
+                                        selected = selectedTab == i,
+                                        onClick = { selectedTab = i }) {
                                         Text(stringResource(t), modifier = Modifier.padding(12.dp))
                                     }
                                 }
@@ -306,6 +340,7 @@ class MainActivity : AppCompatActivity() {
                                     appListViewModel = appListViewModel,
                                     onOpenSettings = { selectedTab = 1 }
                                 )
+
                                 1 -> SettingsScreen(
                                     onBack = { selectedTab = 0 },
                                     themeMode = themeMode,
@@ -327,13 +362,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
     }
+
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         captureEscortIntent(intent)
     }
+
 
     override fun onResume() {
         super.onResume()
@@ -348,7 +385,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun captureEscortIntent(intent: Intent?) {
-        val fromEscort = intent?.getBooleanExtra(PermissionEscortManager.EXTRA_FROM_PERMISSION_ESCORT, false) == true
+        val fromEscort = intent?.getBooleanExtra(
+            PermissionEscortManager.EXTRA_FROM_PERMISSION_ESCORT,
+            false
+        ) == true
         if (fromEscort) {
             val type = intent.getStringExtra(PermissionEscortManager.EXTRA_PERMISSION_ESCORT_TYPE)
                 ?.let { runCatching { PermissionEscortType.valueOf(it) }.getOrNull() }
