@@ -102,12 +102,14 @@ import com.example.adamapplock.protection.ProtectionUiState
 import com.example.adamapplock.protection.ProtectionViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import android.view.WindowManager
-import androidx.compose.foundation.border
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.ScreenLockPortrait
 import com.example.adamapplock.lock.AppLockManager
 import com.example.adamapplock.lock.LockScreen
 import com.example.adamapplock.protection.BiometricUnlockActivity
+import android.os.SystemClock
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 
 private enum class AppLockGateState { Loading, Locked, Unlocked }
@@ -126,6 +128,14 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val activity = this@MainActivity
+
+        val splash = installSplashScreen()
+
+        val start = SystemClock.uptimeMillis()
+        splash.setKeepOnScreenCondition {
+            SystemClock.uptimeMillis() - start < 3000L
+        }
+
         setContent {
             val ctx = LocalContext.current
             val repo = remember { PasswordRepository.get(ctx) }
@@ -140,7 +150,8 @@ class MainActivity : AppCompatActivity() {
                 val missingPasscode = !repo.isPasswordSet()
                 needsSetup = missingPasscode
                 if (!missingPasscode) {
-                    lockState = if (AppLockManager.shouldLock(ctx)) AppLockGateState.Locked else AppLockGateState.Unlocked
+                    lockState =
+                        if (AppLockManager.shouldLock(ctx)) AppLockGateState.Locked else AppLockGateState.Unlocked
                 }
             }
 
@@ -151,7 +162,8 @@ class MainActivity : AppCompatActivity() {
                         when (event) {
                             androidx.lifecycle.Lifecycle.Event.ON_RESUME -> {
                                 val lockRequired = AppLockManager.shouldLock(ctx)
-                                lockState = if (lockRequired) AppLockGateState.Locked else AppLockGateState.Unlocked
+                                lockState =
+                                    if (lockRequired) AppLockGateState.Locked else AppLockGateState.Unlocked
                                 if (!lockRequired) {
                                     AppLockManager.markUnlocked(ctx)
                                 }
@@ -187,13 +199,17 @@ class MainActivity : AppCompatActivity() {
                         onDone = {
                             AppLockManager.markUnlocked(ctx)
                             lockState = AppLockGateState.Unlocked
-                            needsSetup = false // setup screen already saved to repo  // flip immediately after save
+                            needsSetup =
+                                false // setup screen already saved to repo  // flip immediately after save
                         }
                     )
 
                     false -> {
                         when (lockState) {
-                            AppLockGateState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            AppLockGateState.Loading -> Box(
+                                Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 CircularProgressIndicator()
                             }
 
@@ -220,7 +236,11 @@ class MainActivity : AppCompatActivity() {
                                     onUnlock = { entered ->
                                         val digits = entered.filter { it.isDigit() }
                                         if (digits.isEmpty()) {
-                                            Toast.makeText(ctx, R.string.passcode_empty_error, Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                ctx,
+                                                R.string.passcode_empty_error,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                             return@LockScreen
                                         }
 
@@ -231,7 +251,11 @@ class MainActivity : AppCompatActivity() {
                                             AppLockManager.markUnlocked(ctx)
                                             lockState = AppLockGateState.Unlocked
                                         } else {
-                                            Toast.makeText(ctx, R.string.passcode_wrong_error, Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                ctx,
+                                                R.string.passcode_wrong_error,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
                                     }
                                 )
@@ -250,7 +274,10 @@ class MainActivity : AppCompatActivity() {
                         val permissions = protectionState.permissions
                         val overlaySettingsIntent = remember(ctx.packageName) {
                             {
-                                PermissionEscortManager.beginSession(ctx, PermissionEscortType.Overlay)
+                                PermissionEscortManager.beginSession(
+                                    ctx,
+                                    PermissionEscortType.Overlay
+                                )
                                 val intent = Intent(
                                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                     Uri.parse("package:${ctx.packageName}")
@@ -260,28 +287,32 @@ class MainActivity : AppCompatActivity() {
                         }
                         val usageSettingsIntent = remember {
                             {
-                                PermissionEscortManager.beginSession(ctx, PermissionEscortType.Usage)
+                                PermissionEscortManager.beginSession(
+                                    ctx,
+                                    PermissionEscortType.Usage
+                                )
                                 ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
                             }
                         }
                         val batterySettingsIntent = remember(ctx.packageName) {
                             {
-                                PermissionEscortManager.beginSession(ctx, PermissionEscortType.Battery)
-                                val intent = Intent(
-                                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                    Uri.parse("package:${ctx.packageName}")
+                                PermissionEscortManager.beginSession(
+                                    ctx,
+                                    PermissionEscortType.Battery
                                 )
-                                ctx.startActivity(intent)
+                                PermissionUtils.openBatterySettings(ctx)
                             }
                         }
 
-                        if (!permissions.ready) {
+                        var gateSkipped by rememberSaveable { mutableStateOf(false) }
+                        if (!permissions.ready && !gateSkipped) {
                             BackHandler(enabled = true) { activity.finish() }
                             PermissionGate(
                                 permissions = permissions,
                                 onRequestOverlay = overlaySettingsIntent,
                                 onRequestUsage = usageSettingsIntent,
-                                onRequestBattery = batterySettingsIntent
+                                onRequestBattery = batterySettingsIntent,
+                                onSkip = { gateSkipped = true }
                             )
                             return@AdamAppLockTheme
                         }
@@ -296,7 +327,9 @@ class MainActivity : AppCompatActivity() {
                         ) {
                             TabRow(selectedTabIndex = selectedTab) {
                                 tabs.forEachIndexed { i, t ->
-                                    Tab(selected = selectedTab == i, onClick = { selectedTab = i }) {
+                                    Tab(
+                                        selected = selectedTab == i,
+                                        onClick = { selectedTab = i }) {
                                         Text(stringResource(t), modifier = Modifier.padding(12.dp))
                                     }
                                 }
@@ -307,6 +340,7 @@ class MainActivity : AppCompatActivity() {
                                     appListViewModel = appListViewModel,
                                     onOpenSettings = { selectedTab = 1 }
                                 )
+
                                 1 -> SettingsScreen(
                                     onBack = { selectedTab = 0 },
                                     themeMode = themeMode,
@@ -328,13 +362,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
     }
+
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         captureEscortIntent(intent)
     }
+
 
     override fun onResume() {
         super.onResume()
@@ -349,7 +385,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun captureEscortIntent(intent: Intent?) {
-        val fromEscort = intent?.getBooleanExtra(PermissionEscortManager.EXTRA_FROM_PERMISSION_ESCORT, false) == true
+        val fromEscort = intent?.getBooleanExtra(
+            PermissionEscortManager.EXTRA_FROM_PERMISSION_ESCORT,
+            false
+        ) == true
         if (fromEscort) {
             val type = intent.getStringExtra(PermissionEscortManager.EXTRA_PERMISSION_ESCORT_TYPE)
                 ?.let { runCatching { PermissionEscortType.valueOf(it) }.getOrNull() }
@@ -596,11 +635,7 @@ fun SettingsScreen(
     val batterySettingsIntent = remember(ctx.packageName) {
         {
             PermissionEscortManager.beginSession(ctx, PermissionEscortType.Battery)
-            val intent = Intent(
-                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                Uri.parse("package:${ctx.packageName}")
-            )
-            ctx.startActivity(intent)
+            PermissionUtils.openBatterySettings(ctx)
         }
     }
 
@@ -639,7 +674,11 @@ fun SettingsScreen(
                     title = R.string.settings_card_permissions_title,
                     subtitle = R.string.settings_card_permissions_subtitle,
                     icon = Icons.Rounded.Security,
-                    status = if (permissions.ready) R.string.health_check_state_ok else R.string.permission_required_label,
+                    status = when {
+                        !permissions.ready -> R.string.permission_required_label
+                        !permissions.batteryRecommended -> R.string.permission_recommended_label
+                        else -> R.string.health_check_state_ok
+                    },
                     destination = SettingsDestination.Permissions
                 )
             )
@@ -910,7 +949,7 @@ private fun ProtectionSettingsScreen(
                             )
                         }
 
-                        if (!permissions.ready) {
+                        if (!permissions.ready || !permissions.batteryRecommended) {
                             PermissionRequestList(
                                 permissions = permissions,
                                 onRequestOverlay = onRequestOverlay,
@@ -1132,13 +1171,13 @@ private fun PermissionsSettingsScreen(
                         PermissionStatusRow(
                             icon = Icons.Rounded.BatterySaver,
                             title = stringResource(R.string.permission_battery_title),
-                            statusLabel = if (batteryOk) stringResource(R.string.health_check_state_ok) else stringResource(R.string.health_check_state_restricted),
-                            statusColor = if (batteryOk) cs.primary else cs.error,
+                            statusLabel = if (batteryOk) stringResource(R.string.health_check_state_ok) else stringResource(R.string.permission_recommended_label),
+                            statusColor = if (batteryOk) cs.primary else cs.secondary,
                             onAction = onRequestBattery,
                             modifier = Modifier.bringIntoViewRequester(batteryRequester)
                         )
 
-                        AnimatedVisibility(overlayOk && usageOk && batteryOk) {
+                        AnimatedVisibility(overlayOk && usageOk) {
                             SuccessBanner(text = stringResource(R.string.permissions_all_granted))
                         }
                     }
@@ -1298,21 +1337,18 @@ private fun AboutSettingsScreen(
                         SettingRow(
                             icon = Icons.Rounded.PrivacyTip,
                             title = stringResource(R.string.privacy_policy_label),
-                            subtitle = stringResource(R.string.privacy_policy_url),
                             onClick = { uriHandler.openUri(ctx.getString(R.string.privacy_policy_url)) },
                             showChevron = true
                         )
                         SettingRow(
                             icon = Icons.Rounded.Description,
                             title = stringResource(R.string.terms_of_use_label),
-                            subtitle = stringResource(R.string.terms_of_use_url),
                             onClick = { uriHandler.openUri(ctx.getString(R.string.terms_of_use_url)) },
                             showChevron = true
                         )
                         SettingRow(
                             icon = Icons.Rounded.SupportAgent,
                             title = stringResource(R.string.support_label),
-                            subtitle = stringResource(R.string.support_url),
                             onClick = { uriHandler.openUri(ctx.getString(R.string.support_url)) },
                             showChevron = true
                         )
@@ -1789,7 +1825,8 @@ private fun PermissionRequestList(
             description = stringResource(R.string.permission_battery_description),
             granted = permissions.batteryUnrestricted,
             onClick = onRequestBattery,
-            showWhenGranted = showGranted
+            showWhenGranted = showGranted,
+            required = false
         )
     }
 }
@@ -1800,18 +1837,27 @@ private fun PermissionRequestCard(
     description: String,
     granted: Boolean,
     onClick: () -> Unit,
-    showWhenGranted: Boolean = false
+    showWhenGranted: Boolean = false,
+    required: Boolean = true
 ) {
     if (granted && !showWhenGranted) return
 
     val cs = MaterialTheme.colorScheme
-    val statusText = if (granted) {
-        stringResource(R.string.permission_granted_label)
-    } else {
-        stringResource(R.string.permission_required_label)
+    val statusText = when {
+        granted -> stringResource(R.string.permission_granted_label)
+        required -> stringResource(R.string.permission_required_label)
+        else -> stringResource(R.string.permission_recommended_label)
     }
-    val statusColor = if (granted) cs.tertiary else cs.error
-    val statusIcon = if (granted) Icons.Outlined.CheckCircle else Icons.Outlined.WarningAmber
+    val statusColor = when {
+        granted -> cs.tertiary
+        required -> cs.error
+        else -> cs.secondary
+    }
+    val statusIcon = when {
+        granted -> Icons.Outlined.CheckCircle
+        required -> Icons.Outlined.WarningAmber
+        else -> Icons.Outlined.Info
+    }
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large
@@ -1890,7 +1936,8 @@ private fun PermissionGate(
     permissions: PermissionSnapshot,
     onRequestOverlay: () -> Unit,
     onRequestUsage: () -> Unit,
-    onRequestBattery: () -> Unit
+    onRequestBattery: () -> Unit,
+    onSkip: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
     Column(
@@ -1899,10 +1946,22 @@ private fun PermissionGate(
             .background(cs.background)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onSkip) {
+                Text(stringResource(R.string.permission_gate_skip))
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         Text(
             text = stringResource(R.string.permission_gate_title),
             style = MaterialTheme.typography.titleLarge,
@@ -1922,6 +1981,7 @@ private fun PermissionGate(
             onRequestBattery = onRequestBattery,
             showGranted = false
         )
+        }
     }
 }
 
@@ -1945,9 +2005,18 @@ class AppListViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
+            // Prevent "lock yourself out" situations.
+            // - Don't show Android Settings (people could lock it and get stuck)
+            // - Don't show AdamAppLock itself
+            val blockedPackages = setOf(
+                "com.android.settings",
+                application.packageName
+            )
+
             val installedApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
                 .asSequence()
                 .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+                .filter { it.packageName !in blockedPackages }
                 .map { ai ->
                     val label = pm.getApplicationLabel(ai).toString()
                     val iconBitmap = runCatching { pm.getApplicationIcon(ai.packageName) }

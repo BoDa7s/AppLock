@@ -13,7 +13,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 2
-        versionName = "3.5"
+        versionName = "3.6"
         vectorDrawables.useSupportLibrary = true
     }
 
@@ -60,6 +60,10 @@ kotlin {
 }
 
 dependencies {
+
+    implementation(libs.androidx.core.splashscreen)
+
+
     // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
 

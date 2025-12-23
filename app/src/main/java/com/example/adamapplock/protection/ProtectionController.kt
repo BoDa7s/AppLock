@@ -17,8 +17,7 @@ object ProtectionController {
 
     fun canStart(ctx: Context): Boolean =
         PermissionUtils.hasOverlayPermission(ctx) &&
-            PermissionUtils.hasUsageAccess(ctx) &&
-            PermissionUtils.hasUnrestrictedBattery(ctx)
+            PermissionUtils.hasUsageAccess(ctx)
 
     fun start(ctx: Context) {
         if (!canStart(ctx)) return

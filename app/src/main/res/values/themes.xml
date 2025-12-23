@@ -2,4 +2,8 @@
 <resources>
 
     <style name="Theme.AdamAppLock" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.AdamAppLock.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
 </resources>

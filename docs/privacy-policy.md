@@ -16,14 +16,14 @@ AdamAppLock (“the App”) helps you lock selected apps with a passcode or biom
 - The App does not include ads, analytics SDKs, or third-party trackers.
 
 ## What’s stored on your device
-- **Passcode data:** Stored as a salted, one-way cryptographic hash using AndroidX Security / the system keystore. The plaintext passcode is never stored.
+- **Passcode data:** Stored locally as a salted one-way hash (PBKDF2) and protected using Android Keystore–backed encryption (AES-GCM). The plaintext passcode is never stored.
 - **Settings & selections:** Locked-app list, language/theme, lock timers, and related preferences.
 - **Runtime state:** Temporary data required for overlays and permission checks.
 
 ## Permissions we request (and why)
 - **Display over other apps (Appear on top):** To show the lock screen above protected apps.
 - **Usage access:** To detect which app is in the foreground so we can protect the ones you choose.
-- **Unrestricted background usage:** To keep protection reliable when the OS limits background work.
+- **Battery settings (recommended):** Some phones aggressively limit background work. Setting Battery to “Unrestricted” (or allowing background activity) can improve reliability.
 
 These permissions are used **only** for protection features and local checks. They are not used to collect personal data.
 

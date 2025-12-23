@@ -120,11 +120,17 @@ class ProtectionViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun startProtection() {
-        if (!PermissionUtils.hasOverlayPermission(appContext) || !PermissionUtils.hasUsageAccess(appContext) || !PermissionUtils.hasUnrestrictedBattery(appContext)) {
+        // Core requirements: overlay + usage access.
+        if (!PermissionUtils.hasOverlayPermission(appContext) || !PermissionUtils.hasUsageAccess(appContext)) {
             Log.w(TAG, "startProtection skipped: missing permission")
             _uiState.update { it.copy(pendingEnable = true, protectionEnabled = false) }
             Prefs.setProtectionEnabled(appContext, false)
             return
+        }
+
+        // Battery "unrestricted" is recommended for reliability, but not required.
+        if (!PermissionUtils.hasUnrestrictedBattery(appContext)) {
+            notifyBatteryRestriction()
         }
         Log.i(TAG, "Starting protection service")
         Prefs.setProtectionEnabled(appContext, true)
@@ -167,10 +173,8 @@ class ProtectionViewModel(application: Application) : AndroidViewModel(applicati
 
     private fun handlePermissionRegression(previous: PermissionSnapshot?, current: PermissionSnapshot) {
         if (previous == null) return
-        val wasReady = previous.ready
-        if (wasReady && !current.batteryUnrestricted) {
-            notifyBatteryRestriction()
-        }
+        // If battery optimization becomes restrictive, notify the user (advisory).
+        if (previous.batteryUnrestricted && !current.batteryUnrestricted) notifyBatteryRestriction()
     }
 
     private fun notifyBatteryRestriction() {
