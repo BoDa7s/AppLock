@@ -32,7 +32,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.awi.lock.PermissionEscortManager.PermissionEscortType
-import com.awi.lock.ui.theme.AdamAppLockTheme
+import com.awi.lock.ui.theme.AWILockTheme
 import com.awi.lock.ui.theme.ThemeMode
 import android.content.Context
 import android.os.Build
@@ -188,7 +188,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            AdamAppLockTheme(themeMode = themeMode) {
+            AWILockTheme(themeMode = themeMode) {
 
                 when (needsSetup) {
                     null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -260,7 +260,7 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 )
 
-                                return@AdamAppLockTheme
+                                return@AWILockTheme
                             }
 
                             AppLockGateState.Unlocked -> Unit
@@ -314,7 +314,7 @@ class MainActivity : AppCompatActivity() {
                                 onRequestBattery = batterySettingsIntent,
                                 onSkip = { gateSkipped = true }
                             )
-                            return@AdamAppLockTheme
+                            return@AWILockTheme
                         }
 
                         Column(
@@ -2007,7 +2007,7 @@ class AppListViewModel(application: Application) : AndroidViewModel(application)
 
             // Prevent "lock yourself out" situations.
             // - Don't show Android Settings (people could lock it and get stuck)
-            // - Don't show AdamAppLock itself
+            // - Don't show AWI Lock itself
             val blockedPackages = setOf(
                 "com.android.settings",
                 application.packageName

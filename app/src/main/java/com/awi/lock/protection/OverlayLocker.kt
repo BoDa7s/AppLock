@@ -19,7 +19,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.awi.lock.Prefs
 import com.awi.lock.PermissionUtils
 import com.awi.lock.lock.LockScreen
-import com.awi.lock.ui.theme.AdamAppLockTheme
+import com.awi.lock.ui.theme.AWILockTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -73,7 +73,7 @@ class OverlayLocker(context: Context) {
                 setViewTreeLifecycleOwner(lifecycleOwner)
                 setViewTreeSavedStateRegistryOwner(lifecycleOwner)
                 setContent {
-                    AdamAppLockTheme(themeMode = Prefs.getThemeMode(appContext)) {
+                    AWILockTheme(themeMode = Prefs.getThemeMode(appContext)) {
                         LockScreen(
                             lockedAppLabel = appLabel,
                             useBiometric = useBiometric,

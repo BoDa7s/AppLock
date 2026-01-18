@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Privacy Policy
-description: How AdamAppLock handles your data
+description: How AWI Lock handles your data
 permalink: /privacy/
 last_updated: 2025-12-21
 ---
@@ -9,7 +9,7 @@ last_updated: 2025-12-21
 # Privacy Policy
 **Effective date:** 2025-12-21
 
-AdamAppLock (“the App”) helps you lock selected apps with a passcode or biometric. It is designed to work **on-device** and does not send your personal data to our servers.
+AWI Lock (“the App”) helps you lock selected apps with a passcode or biometric. It is designed to work **on-device** and does not send your personal data to our servers.
 
 ## What we collect
 - **No personal data is collected or transmitted off your device.**

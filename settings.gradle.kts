@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AdamAppLock"
+rootProject.name = "AWILock"
 include(":app")

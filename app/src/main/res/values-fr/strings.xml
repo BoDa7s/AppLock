@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AdamAppLock</string>
+    <string name="app_name">AWI Lock</string>
 
     <!-- Tabs -->
     <string name="tab_main">Accueil</string>
@@ -109,17 +109,17 @@
 
     <!-- Permissions & protection -->
     <string name="permission_overlay_title">Afficher au-dessus des autres applications</string>
-    <string name="permission_overlay_description">Autorisez AdamAppLock à apparaître au premier plan pour afficher l\'écran de verrouillage au-dessus des applications protégées.</string>
+    <string name="permission_overlay_description">Autorisez AWI Lock à apparaître au premier plan pour afficher l\'écran de verrouillage au-dessus des applications protégées.</string>
     <string name="permission_usage_title">Accès aux statistiques d\'utilisation</string>
-    <string name="permission_usage_description">L\'accès à l\'utilisation permet à AdamAppLock de détecter quelle application est ouverte afin de protéger celles que vous choisissez.</string>
+    <string name="permission_usage_description">L\'accès à l\'utilisation permet à AWI Lock de détecter quelle application est ouverte afin de protéger celles que vous choisissez.</string>
     <string name="permission_battery_title">Utilisation en arrière-plan sans restriction</string>
-    <string name="permission_battery_description">Configurez AdamAppLock en utilisation de batterie non restreinte afin que la protection et sa superposition ne soient pas fermées en arrière-plan.</string>
+    <string name="permission_battery_description">Configurez AWI Lock en utilisation de batterie non restreinte afin que la protection et sa superposition ne soient pas fermées en arrière-plan.</string>
     <string name="permission_button_open">Ouvrir les paramètres</string>
     <string name="permission_granted_label">Autorisation accordée</string>
     <string name="permission_required_label">Autorisation requise</string>
     <string name="permission_recommended_label">Recommandé</string>
     <string name="permission_gate_title">Activer les autorisations requises</string>
-    <string name="permission_gate_description">Pour verrouiller les apps, AdamAppLock nécessite l’autorisation de superposition et l’accès à l’utilisation. Vous pouvez ignorer pour l’instant, mais la protection restera désactivée jusqu’à ce que vous les activiez.</string>
+    <string name="permission_gate_description">Pour verrouiller les apps, AWI Lock nécessite l’autorisation de superposition et l’accès à l’utilisation. Vous pouvez ignorer pour l’instant, mais la protection restera désactivée jusqu’à ce que vous les activiez.</string>
     <string name="permission_gate_skip">Ignorer</string>
     <string name="permission_missing_toast">Accordez la superposition, l\'accès à l\'utilisation et l\'utilisation en arrière-plan sans restriction pour activer la protection.</string>
     <string name="protection_toggle_title">Démarrer la protection</string>
@@ -129,24 +129,24 @@
     <string name="protection_status_stopped">La protection est désactivée</string>
     <string name="protection_status_pending_permissions">En attente d\'autorisations pour activer la protection</string>
     <string name="protection_status_permissions_missing">Autorisations manquantes \u2013 accordez la superposition, l\'accès à l\'utilisation et la batterie sans restriction</string>
-    <string name="protection_status_summary">AdamAppLock surveille vos applications verrouillées et affiche la superposition lorsqu\'une application protégée s\'ouvre.</string>
+    <string name="protection_status_summary">AWI Lock surveille vos applications verrouillées et affiche la superposition lorsqu\'une application protégée s\'ouvre.</string>
     <string name="protection_service_running">Le service de protection est en cours d\'exécution</string>
     <string name="protection_service_not_running">Le service de protection est en pause</string>
     <string name="protection_manage_in_settings">Gérer la protection dans les paramètres</string>
     <string name="protection_settings_title">Activer la protection avec superposition</string>
     <string name="protection_settings_description">Démarrez ou arrêtez la superposition de verrouillage et sa notification. Les autorisations doivent rester accordées pour que la superposition s\'affiche correctement.</string>
     <string name="battery_permission_dialog_title">Autoriser l\'utilisation en arrière-plan sans restriction</string>
-    <string name="battery_permission_dialog_body">Configurez AdamAppLock en utilisation de batterie non restreinte pour maintenir la protection. Continuez vers les paramètres de batterie pour l’accorder.</string>
+    <string name="battery_permission_dialog_body">Configurez AWI Lock en utilisation de batterie non restreinte pour maintenir la protection. Continuez vers les paramètres de batterie pour l’accorder.</string>
     <string name="permission_escort_channel_name">Accompagnement des autorisations</string>
-    <string name="permission_escort_channel_description">Garde AdamAppLock à portée pendant l’octroi des autorisations.</string>
+    <string name="permission_escort_channel_description">Garde AWI Lock à portée pendant l’octroi des autorisations.</string>
     <string name="permission_escort_monitor_title">En attente de l\'autorisation</string>
-    <string name="permission_escort_monitor_body">Revenez à AdamAppLock après avoir accordé l\'accès.</string>
+    <string name="permission_escort_monitor_body">Revenez à AWI Lock après avoir accordé l\'accès.</string>
     <string name="permission_escort_granted_title">Autorisation accordée</string>
-    <string name="permission_escort_granted_body">Retour à AdamAppLock pour continuer.</string>
+    <string name="permission_escort_granted_body">Retour à AWI Lock pour continuer.</string>
     <string name="permission_escort_timeout_title">Autorisation encore requise</string>
     <string name="permission_escort_timeout_body">Touchez pour revenir et terminer l’activation.</string>
     <string name="protection_notification_title">Protection des applications en cours</string>
-    <string name="protection_notification_body">AdamAppLock surveille les applications verrouillées.</string>
+    <string name="protection_notification_body">AWI Lock surveille les applications verrouillées.</string>
     <string name="protection_notification_channel">Protection des applications</string>
     <string name="protection_notification_channel_description">Maintient le service de protection actif pour verrouiller les applications sélectionnées.</string>
     <string name="health_check_button">Lancer le contrôle de protection</string>
@@ -164,7 +164,7 @@
     <string name="health_check_state_failed">Échec</string>
     <string name="health_check_state_restricted">Restreint</string>
     <string name="battery_restricted_title">Protection en pause</string>
-    <string name="battery_restricted_body">Les restrictions de batterie ont arrêté AdamAppLock. Activez l’utilisation en arrière-plan sans restriction pour reprendre la protection.</string>
+    <string name="battery_restricted_body">Les restrictions de batterie ont arrêté AWI Lock. Activez l’utilisation en arrière-plan sans restriction pour reprendre la protection.</string>
     <string name="permissions_check_now">Exécuter la vérification des autorisations</string>
     <string name="permissions_check_running">Vérification des autorisations…</string>
     <string name="permissions_all_granted">Toutes les autorisations requises sont accordées.</string>

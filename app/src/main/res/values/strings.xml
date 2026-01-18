@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AdamAppLock</string>
+    <string name="app_name">AWI Lock</string>
 
     <!-- Tabs -->
     <string name="tab_main">Main</string>
@@ -113,17 +113,17 @@
 
     <!-- Permissions & protection -->
     <string name="permission_overlay_title">Display over other apps</string>
-    <string name="permission_overlay_description">Allow AdamAppLock to appear on top so it can safely show the lock screen overlay above protected apps.</string>
+    <string name="permission_overlay_description">Allow AWI Lock to appear on top so it can safely show the lock screen overlay above protected apps.</string>
     <string name="permission_usage_title">Usage access</string>
-    <string name="permission_usage_description">Usage access lets AdamAppLock detect which app is open so it can guard the ones you select.</string>
+    <string name="permission_usage_description">Usage access lets AWI Lock detect which app is open so it can guard the ones you select.</string>
     <string name="permission_battery_title">Battery settings (recommended)</string>
-    <string name="permission_battery_description">To keep protection reliable, set AdamAppLock Battery to “Unrestricted” (or allow background activity). This is optional but helps on some devices.</string>
+    <string name="permission_battery_description">To keep protection reliable, set AWI Lock Battery to “Unrestricted” (or allow background activity). This is optional but helps on some devices.</string>
     <string name="permission_button_open">Open settings</string>
     <string name="permission_granted_label">Permission granted</string>
     <string name="permission_required_label">Permission required</string>
     <string name="permission_recommended_label">Recommended</string>
     <string name="permission_gate_title">Enable permissions</string>
-    <string name="permission_gate_description">To lock apps, AdamAppLock needs Overlay and Usage access. You can skip for now, but protection will stay off until you enable them.</string>
+    <string name="permission_gate_description">To lock apps, AWI Lock needs Overlay and Usage access. You can skip for now, but protection will stay off until you enable them.</string>
     <string name="permission_gate_skip">Skip</string>
     <string name="permission_missing_toast">Grant Overlay and Usage access to enable protection.</string>
     <string name="protection_toggle_title">Start protection</string>
@@ -133,24 +133,24 @@
     <string name="protection_status_stopped">Protection is off</string>
     <string name="protection_status_pending_permissions">Waiting for permissions to enable protection</string>
     <string name="protection_status_permissions_missing">Permissions missing \u2013 grant Overlay and Usage access</string>
-    <string name="protection_status_summary">AdamAppLock watches your locked apps and shows the overlay when a protected app opens.</string>
+    <string name="protection_status_summary">AWI Lock watches your locked apps and shows the overlay when a protected app opens.</string>
     <string name="protection_service_running">Protection service is running</string>
     <string name="protection_service_not_running">Protection service is paused</string>
     <string name="protection_manage_in_settings">Manage protection in Settings</string>
     <string name="protection_settings_title">Enable overlay protection</string>
     <string name="protection_settings_description">Start or stop the lock overlay and its notification. Permissions must stay granted for the overlay to appear reliably.</string>
     <string name="battery_permission_dialog_title">Battery settings (recommended)</string>
-    <string name="battery_permission_dialog_body">For best reliability, set AdamAppLock Battery to “Unrestricted” (or allow background activity). This is optional.</string>
+    <string name="battery_permission_dialog_body">For best reliability, set AWI Lock Battery to “Unrestricted” (or allow background activity). This is optional.</string>
     <string name="permission_escort_channel_name">Permission escort</string>
-    <string name="permission_escort_channel_description">Keeps AdamAppLock nearby while you grant permissions.</string>
+    <string name="permission_escort_channel_description">Keeps AWI Lock nearby while you grant permissions.</string>
     <string name="permission_escort_monitor_title">Waiting for permission</string>
-    <string name="permission_escort_monitor_body">Return to AdamAppLock after granting access.</string>
+    <string name="permission_escort_monitor_body">Return to AWI Lock after granting access.</string>
     <string name="permission_escort_granted_title">Permission granted</string>
-    <string name="permission_escort_granted_body">Returning to AdamAppLock to continue.</string>
+    <string name="permission_escort_granted_body">Returning to AWI Lock to continue.</string>
     <string name="permission_escort_timeout_title">Still need permission</string>
-    <string name="permission_escort_timeout_body">Tap to finish enabling AdamAppLock.</string>
+    <string name="permission_escort_timeout_body">Tap to finish enabling AWI Lock.</string>
     <string name="protection_notification_title">App protection running</string>
-    <string name="protection_notification_body">AdamAppLock is monitoring locked apps.</string>
+    <string name="protection_notification_body">AWI Lock is monitoring locked apps.</string>
     <string name="protection_notification_channel">App Protection</string>
     <string name="protection_notification_channel_description">Keeps the protection service running to lock selected apps.</string>
     <string name="permissions_check_now">Run permissions check now</string>
@@ -173,7 +173,7 @@
     <string name="health_check_state_failed">Failed</string>
     <string name="health_check_state_restricted">Restricted</string>
     <string name="battery_restricted_title">Battery restrictions detected</string>
-    <string name="battery_restricted_body">Your phone may limit AdamAppLock in the background. For best reliability, set Battery to “Unrestricted” (or allow background activity).</string>
+    <string name="battery_restricted_body">Your phone may limit AWI Lock in the background. For best reliability, set Battery to “Unrestricted” (or allow background activity).</string>
     <string name="privacy_policy_label">Privacy Policy</string>
     <string name="terms_of_use_label">Terms of Use</string>
     <string name="support_label">Support</string>

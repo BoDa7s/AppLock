@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AdamAppLock</string>
+    <string name="app_name">AWI Lock</string>
 
     <!-- Tabs -->
     <string name="tab_main">الرئيسية</string>
@@ -109,17 +109,17 @@
 
     <!-- Permissions & protection -->
     <string name="permission_overlay_title">العرض فوق التطبيقات الأخرى</string>
-    <string name="permission_overlay_description">اسمح لـ AdamAppLock بالظهور في المقدمة ليعرض شاشة القفل فوق التطبيقات المحمية.</string>
+    <string name="permission_overlay_description">اسمح لـ AWI Lock بالظهور في المقدمة ليعرض شاشة القفل فوق التطبيقات المحمية.</string>
     <string name="permission_usage_title">الوصول إلى إحصائيات الاستخدام</string>
-    <string name="permission_usage_description">يتيح وصول الاستخدام لـ AdamAppLock معرفة التطبيق المفتوح ليحمي التطبيقات التي تختارها.</string>
+    <string name="permission_usage_description">يتيح وصول الاستخدام لـ AWI Lock معرفة التطبيق المفتوح ليحمي التطبيقات التي تختارها.</string>
     <string name="permission_battery_title">استخدام الخلفية غير المقيّد</string>
-    <string name="permission_battery_description">عيّن AdamAppLock على استخدام بطارية غير مقيّد حتى لا يتم إيقاف الحماية أو النافذة المنبثقة في الخلفية.</string>
+    <string name="permission_battery_description">عيّن AWI Lock على استخدام بطارية غير مقيّد حتى لا يتم إيقاف الحماية أو النافذة المنبثقة في الخلفية.</string>
     <string name="permission_button_open">فتح الإعدادات</string>
     <string name="permission_granted_label">تم منح الإذن</string>
     <string name="permission_required_label">الإذن مطلوب</string>
     <string name="permission_recommended_label">موصى به</string>
     <string name="permission_gate_title">فعّل الأذونات المطلوبة</string>
-    <string name="permission_gate_description">لقفل التطبيقات، يحتاج AdamAppLock إلى إذني الظهور فوق التطبيقات الأخرى والوصول إلى الاستخدام. يمكنك التخطي الآن، لكن ستبقى الحماية متوقفة حتى تفعّلها.</string>
+    <string name="permission_gate_description">لقفل التطبيقات، يحتاج AWI Lock إلى إذني الظهور فوق التطبيقات الأخرى والوصول إلى الاستخدام. يمكنك التخطي الآن، لكن ستبقى الحماية متوقفة حتى تفعّلها.</string>
     <string name="permission_gate_skip">تخطي</string>
     <string name="permission_missing_toast">امنح الظهور فوق التطبيقات الأخرى، ووصول الاستخدام، والاستخدام غير المقيّد في الخلفية لتفعيل الحماية.</string>
     <string name="protection_toggle_title">بدء الحماية</string>
@@ -129,24 +129,24 @@
     <string name="protection_status_stopped">الحماية متوقفة</string>
     <string name="protection_status_pending_permissions">بانتظار الأذونات لتفعيل الحماية</string>
     <string name="protection_status_permissions_missing">أذونات مفقودة - امنح الظهور، ووصول الاستخدام، واستخدام البطارية غير المقيّد</string>
-    <string name="protection_status_summary">يراقب AdamAppLock تطبيقاتك المقفلة ويعرض النافذة عند فتح تطبيق محمي.</string>
+    <string name="protection_status_summary">يراقب AWI Lock تطبيقاتك المقفلة ويعرض النافذة عند فتح تطبيق محمي.</string>
     <string name="protection_service_running">خدمة الحماية قيد التشغيل</string>
     <string name="protection_service_not_running">خدمة الحماية متوقفة مؤقتًا</string>
     <string name="protection_manage_in_settings">إدارة الحماية في الإعدادات</string>
     <string name="protection_settings_title">تفعيل حماية الظهور فوق التطبيقات</string>
     <string name="protection_settings_description">ابدأ أو أوقف نافذة القفل وإشعارها. يجب أن تبقى الأذونات مفعّلة لظهور النافذة بثبات.</string>
     <string name="battery_permission_dialog_title">اسمح بالاستخدام غير المقيّد في الخلفية</string>
-    <string name="battery_permission_dialog_body">عيّن AdamAppLock على استخدام البطارية بدون تقييد حتى تبقى الحماية فعالة. تابع إلى إعدادات البطارية لمنح الإذن.</string>
+    <string name="battery_permission_dialog_body">عيّن AWI Lock على استخدام البطارية بدون تقييد حتى تبقى الحماية فعالة. تابع إلى إعدادات البطارية لمنح الإذن.</string>
     <string name="permission_escort_channel_name">مرافقة الإذن</string>
-    <string name="permission_escort_channel_description">إبقاء AdamAppLock قريبًا أثناء منح الأذونات.</string>
+    <string name="permission_escort_channel_description">إبقاء AWI Lock قريبًا أثناء منح الأذونات.</string>
     <string name="permission_escort_monitor_title">في انتظار الإذن</string>
-    <string name="permission_escort_monitor_body">ارجع إلى AdamAppLock بعد منح الإذن.</string>
+    <string name="permission_escort_monitor_body">ارجع إلى AWI Lock بعد منح الإذن.</string>
     <string name="permission_escort_granted_title">تم منح الإذن</string>
-    <string name="permission_escort_granted_body">جارٍ العودة إلى AdamAppLock للمتابعة.</string>
+    <string name="permission_escort_granted_body">جارٍ العودة إلى AWI Lock للمتابعة.</string>
     <string name="permission_escort_timeout_title">ما زلنا بحاجة إلى الإذن</string>
     <string name="permission_escort_timeout_body">انقر للعودة وإنهاء الإعداد.</string>
     <string name="protection_notification_title">حماية التطبيق قيد التشغيل</string>
-    <string name="protection_notification_body">AdamAppLock يراقب التطبيقات المقفلة.</string>
+    <string name="protection_notification_body">AWI Lock يراقب التطبيقات المقفلة.</string>
     <string name="protection_notification_channel">حماية التطبيق</string>
     <string name="protection_notification_channel_description">يبقي خدمة الحماية تعمل لقفل التطبيقات التي تختارها.</string>
     <string name="health_check_button">تشغيل فحص الحماية</string>
@@ -164,7 +164,7 @@
     <string name="health_check_state_failed">فشل</string>
     <string name="health_check_state_restricted">مقيّد</string>
     <string name="battery_restricted_title">تم إيقاف الحماية مؤقتًا</string>
-    <string name="battery_restricted_body">أوقفت قيود البطارية AdamAppLock. أعد تفعيل الاستخدام غير المقيّد في الخلفية لاستئناف الحماية.</string>
+    <string name="battery_restricted_body">أوقفت قيود البطارية AWI Lock. أعد تفعيل الاستخدام غير المقيّد في الخلفية لاستئناف الحماية.</string>
     <string name="permissions_check_now">تشغيل فحص الأذونات الآن</string>
     <string name="permissions_check_running">جارٍ فحص الأذونات…</string>
     <string name="permissions_all_granted">تم منح جميع الأذونات المطلوبة.</string>
