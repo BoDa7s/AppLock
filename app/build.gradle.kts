@@ -12,7 +12,7 @@ android {
         applicationId = "com.awi.lock"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
+        versionCode = 4
         versionName = "3.8"
         vectorDrawables.useSupportLibrary = true
     }
