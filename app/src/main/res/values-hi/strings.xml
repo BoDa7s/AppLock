@@ -63,7 +63,7 @@
     <string name="theme_dark">गहरा</string>
     <string name="about_app_version_label">ऐप संस्करण</string>
     <string name="about_developer_label">डेवलपर</string>
-    <string name="developer_name">आदम अली</string>
+    <string name="developer_name">AWI Security LLC</string>
 
     <!-- Lock timer descriptions -->
     <string name="lock_timer_immediate_title">तुरंत लॉक करें</string>

@@ -63,7 +63,7 @@
     <string name="theme_dark">Oscuro</string>
     <string name="about_app_version_label">Versión de la aplicación</string>
     <string name="about_developer_label">Desarrollador</string>
-    <string name="developer_name">Adam Ali</string>
+    <string name="developer_name">AWI Security LLC</string>
 
     <!-- Lock timer descriptions -->
     <string name="lock_timer_immediate_title">Bloquear inmediatamente</string>

@@ -63,7 +63,7 @@
     <string name="theme_dark">داكن</string>
     <string name="about_app_version_label">إصدار التطبيق</string>
     <string name="about_developer_label">المطوّر</string>
-    <string name="developer_name">آدم علي</string>
+    <string name="developer_name">AWI Security LLC</string>
 
     <!-- Lock timer descriptions -->
     <string name="lock_timer_immediate_title">قفل فورًا</string>
