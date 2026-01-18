@@ -173,9 +173,9 @@
     <string name="privacy_policy_label">गोपनीयता नीति</string>
     <string name="terms_of_use_label">उपयोग की शर्तें</string>
     <string name="support_label">सहायता</string>
-    <string name="privacy_policy_url">https://boda7s.github.io/AppLock/privacy/</string>
-    <string name="terms_of_use_url">https://boda7s.github.io/AppLock/terms/</string>
-    <string name="support_url">https://github.com/BoDa7s/AppLock/issues</string>
+    <string name="privacy_policy_url">https://www.awisecurity.com/privacy/</string>
+    <string name="terms_of_use_url">https://www.awisecurity.com/terms/</string>
+    <string name="support_url">https://www.awisecurity.com/support/</string>
 
     <!-- Misc -->
     <string name="version_unknown">अज्ञात</string>
