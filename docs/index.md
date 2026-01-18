@@ -1,11 +1,11 @@
 ---
 layout: page
-title: AdamAppLock
+title: AWI Lock
 permalink: /
 ---
 
 <div class="hero">
-  <h1>AdamAppLock</h1>
+  <h1>AWI Lock</h1>
   <p>Lock the apps you choose with a fast overlay, smart permissions, and a clean, bilingual UI.</p>
   <a class="btn primary" href="{{ site.baseurl }}/privacy/">Privacy Policy</a>
   <a class="btn secondary" href="{{ site.baseurl }}/terms/">Terms of Use</a>

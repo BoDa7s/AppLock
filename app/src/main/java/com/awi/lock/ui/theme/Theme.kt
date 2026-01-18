@@ -23,7 +23,7 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 private enum class OemStyle { PIXEL, SAMSUNG, XIAOMI, OTHER }
 
 @Composable
-fun AdamAppLockTheme(
+fun AWILockTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
@@ -117,4 +117,3 @@ private fun shapesFor(oemStyle: OemStyle): Shapes = when (oemStyle) {
 
     OemStyle.OTHER -> Shapes()
 }
-

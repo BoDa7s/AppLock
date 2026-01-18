@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Terms of Use
-description: The rules for using AdamAppLock
+description: The rules for using AWI Lock
 permalink: /terms/
 last_updated: 2025-12-21
 ---
@@ -9,7 +9,7 @@ last_updated: 2025-12-21
 # Terms of Use
 **Effective date:** 2025-12-21
 
-By installing or using AdamAppLock (“the App”), you agree to these Terms.
+By installing or using AWI Lock (“the App”), you agree to these Terms.
 
 ## 1. Use of the App
 The App helps you restrict access to selected apps on your device. You must use it in compliance with applicable laws and platform policies.

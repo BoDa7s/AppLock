@@ -20,7 +20,7 @@ class PasswordRepository private constructor(prefsName: String, context: Context
 
     companion object {
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
-        private const val KEY_ALIAS = "adam_app_lock_aes_key"
+        private const val KEY_ALIAS = "awi_lock_aes_key"
         private const val KEY_HASH = "master_pw_hash_enc" // encrypted blob
         private const val KEY_SALT = "master_pw_salt_enc" // encrypted blob
 
@@ -30,7 +30,7 @@ class PasswordRepository private constructor(prefsName: String, context: Context
         private const val GCM_TAG_BITS = 128
 
         @Volatile private var INSTANCE: PasswordRepository? = null
-        fun get(context: Context, prefsName: String = "adam_app_lock_secure_prefs"): PasswordRepository =
+        fun get(context: Context, prefsName: String = "awi_lock_secure_prefs"): PasswordRepository =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: PasswordRepository(prefsName, context).also { INSTANCE = it }
             }

@@ -22,7 +22,7 @@ AppLock-Android is a Jetpack Compose app locker. It monitors foreground apps wit
 - Project targets SDK 35 and uses Kotlin 2.0.21 with the 2024.09 Compose BOM.
 
 ## Getting Started
-Download the latest `AdamAppLock` APK from the [Releases](../../releases) page on GitHub and install it on your Android device (enable "Install unknown apps" if prompted).
+Download the latest `AWI Lock` APK from the [Releases](../../releases) page on GitHub and install it on your Android device (enable "Install unknown apps" if prompted).
 
 ## Using the App
 1. Launch the app and follow the passcode setup flow.
@@ -50,7 +50,7 @@ Once configured, switching to a locked app triggers the overlay requiring passco
         ├─ build.gradle.kts
         └─ src/main/
         ├─ AndroidManifest.xml
-        ├─ java/com/example/adamapplock/
+        ├─ java/com/example/awilock/
         │ ├─ MainActivity.kt
         │ ├─ protection/ProtectionService.kt
         │ ├─ protection/OverlayLocker.kt
