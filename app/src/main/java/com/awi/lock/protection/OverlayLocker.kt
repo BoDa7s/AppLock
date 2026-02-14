@@ -1,11 +1,13 @@
 package com.awi.lock.protection
 
 import android.content.Context
+import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
@@ -37,9 +39,15 @@ class OverlayLocker(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private var overlayView: ComposeView? = null
+    private var privacyShieldView: View? = null
     private var lockedPackage: String? = null
     private var lastOverlayActionAt = 0L
     private var overlayLifecycleOwner: OverlayLifecycleOwner? = null
+
+    fun isLockOverlayShowingFor(pkg: String): Boolean {
+        val view = overlayView
+        return view != null && view.isAttachedToWindow && lockedPackage == pkg
+    }
 
     fun showLockedApp(
         pkg: String,
@@ -69,7 +77,6 @@ class OverlayLocker(context: Context) {
             lockedPackage = pkg
             val lifecycleOwner = OverlayLifecycleOwner().apply { markResumed() }
             val view = ComposeView(appContext).apply {
-                // Attach the lifecycle and saved state owners to the view
                 setViewTreeLifecycleOwner(lifecycleOwner)
                 setViewTreeSavedStateRegistryOwner(lifecycleOwner)
                 setContent {
@@ -91,9 +98,10 @@ class OverlayLocker(context: Context) {
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                 else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                        WindowManager.LayoutParams.FLAG_FULLSCREEN or
-                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN or
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_SECURE,
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = Gravity.TOP or Gravity.START
@@ -113,6 +121,53 @@ class OverlayLocker(context: Context) {
                 }
         }
         return true
+    }
+
+    fun showPrivacyShield() {
+        if (privacyShieldView?.isAttachedToWindow == true) return
+        if (!PermissionUtils.hasOverlayPermission(appContext)) return
+
+        scope.launch {
+            if (privacyShieldView?.isAttachedToWindow == true) return@launch
+
+            val shield = View(appContext).apply {
+                setBackgroundColor(Color.BLACK)
+                isClickable = true
+                isFocusable = true
+            }
+
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN or
+                    WindowManager.LayoutParams.FLAG_SECURE,
+                PixelFormat.OPAQUE
+            ).apply {
+                gravity = Gravity.TOP or Gravity.START
+            }
+
+            runCatching { windowManager.addView(shield, params) }
+                .onSuccess {
+                    privacyShieldView = shield
+                    Log.i(TAG, "privacy_shield_added")
+                }
+                .onFailure { err -> Log.e(TAG, "privacy_shield_add_failed", err) }
+        }
+    }
+
+    fun dismissPrivacyShield(reason: String? = null) {
+        scope.launch {
+            privacyShieldView?.let {
+                runCatching { windowManager.removeViewImmediate(it) }
+                    .onFailure { err -> Log.e(TAG, "privacy_shield_remove_failed", err) }
+            }
+            privacyShieldView = null
+            reason?.let { Log.i(TAG, "privacy_shield_dismissed reason=$it") }
+        }
     }
 
     fun dismiss(reason: String? = null) {

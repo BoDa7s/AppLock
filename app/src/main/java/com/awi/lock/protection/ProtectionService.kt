@@ -24,13 +24,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.currentCoroutineContext
 
 class ProtectionService : Service() {
 
+    private enum class AuthState {
+        LOCKED,
+        AUTH_SHOWING,
+        UNLOCKED
+    }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var monitorJob: Job? = null
@@ -66,6 +71,7 @@ class ProtectionService : Service() {
         stopMonitoring()
         runCatching { unregisterReceiver(screenOffReceiver) }
         overlayLocker.dismiss("service_destroy")
+        overlayLocker.dismissPrivacyShield("service_destroy")
         SessionTimeoutScheduler.cancel()
         super.onDestroy()
     }
@@ -108,6 +114,7 @@ class ProtectionService : Service() {
             if (!hasOverlay || !hasUsage) {
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
                     overlayLocker.dismiss("permissions_missing")
+                    overlayLocker.dismissPrivacyShield("permissions_missing")
                 }
                 if (lastLockedPkg != null) {
                     Log.w(TAG, "Stopping overlay due to missing permission")
@@ -121,10 +128,6 @@ class ProtectionService : Service() {
             if (topPkg.isNullOrBlank() || topPkg == packageName) {
                 delay(delayMs)
                 continue
-            }
-
-            if (lastLockedPkg != null && lastLockedPkg != topPkg) {
-                lastLockedPkg = null
             }
 
             val sessionPkg = Prefs.getSessionUnlocked(this)
@@ -158,10 +161,12 @@ class ProtectionService : Service() {
                 if (samePkg) {
                     Prefs.clearLastBackground(this)
                     SessionTimeoutScheduler.cancel()
+                    maybeUpdatePrivacyShield(topPkg, isRealApp, AuthState.UNLOCKED)
                     delay(delayMs)
                     continue
                 }
                 if (sameUid) {
+                    maybeUpdatePrivacyShield(topPkg, isRealApp, AuthState.UNLOCKED)
                     delay(delayMs)
                     continue
                 }
@@ -175,62 +180,69 @@ class ProtectionService : Service() {
                 }
 
                 if (!isRealApp) {
+                    maybeUpdatePrivacyShield(topPkg, isRealApp, AuthState.UNLOCKED)
                     delay(delayMs)
                     continue
                 }
             }
 
             if (isLocked && isRealApp) {
-                // debounce duplicate overlay launches
-                if (lastLockedPkg == topPkg) {
-                    delay(delayMs)
-                    continue
-                }
-
                 val label = appInfo?.loadLabel(packageManager)?.toString()
                 val allowBiometric = Prefs.useBiometric(this)
 
-                // FIX: Switch to Main thread to show UI
-                val requested = kotlinx.coroutines.withContext(Dispatchers.Main) {
-                    overlayLocker.showLockedApp(
-                        pkg = topPkg,
-                        appLabel = label,
-                        useBiometric = allowBiometric,
-                        onUnlock = { passcode ->
-                            // This callback usually runs on Main, but let's be safe with logic
-                            val digitsOnly = passcode.filter { it.isDigit() }
-                            if (digitsOnly.isEmpty()) {
-                                Toast.makeText(this@ProtectionService, getString(R.string.passcode_empty_error), Toast.LENGTH_SHORT).show()
-                                return@showLockedApp
-                            }
+                Prefs.setAuthPendingPackage(this, topPkg)
 
-                            val chars = digitsOnly.toCharArray()
-                            // verifyPassword might be slow, consider putting it back on Default if it uses heavy hashing
-                            // For now, it's likely fine here for simple PINs.
-                            val ok = passwordRepo.verifyPassword(chars)
-                            java.util.Arrays.fill(chars, '\u0000')
-                            if (ok) {
-                                completeUnlock(topPkg, newUid)
-                            } else {
-                                Toast.makeText(this@ProtectionService, getString(R.string.passcode_wrong_error), Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        onBiometric = {
-                            BiometricUnlockActivity.launch(this@ProtectionService) { success ->
-                                if (success) completeUnlock(topPkg, newUid)
-                            }
-                        }
-                    )
-                }
+                val isShowingLock = overlayLocker.isLockOverlayShowingFor(topPkg)
+                val authState = if (isShowingLock) AuthState.AUTH_SHOWING else AuthState.LOCKED
+                maybeUpdatePrivacyShield(topPkg, isRealApp, authState)
 
-                if (requested) {
-                    lastLockedPkg = topPkg
-                    Log.i(TAG, "overlay_requested pkg=$topPkg label=$label")
+                if (!isShowingLock) {
+                    val requested = kotlinx.coroutines.withContext(Dispatchers.Main) {
+                        overlayLocker.showLockedApp(
+                            pkg = topPkg,
+                            appLabel = label,
+                            useBiometric = allowBiometric,
+                            onUnlock = { passcode ->
+                                val digitsOnly = passcode.filter { it.isDigit() }
+                                if (digitsOnly.isEmpty()) {
+                                    Toast.makeText(this@ProtectionService, getString(R.string.passcode_empty_error), Toast.LENGTH_SHORT).show()
+                                    return@showLockedApp
+                                }
+
+                                val chars = digitsOnly.toCharArray()
+                                val ok = passwordRepo.verifyPassword(chars)
+                                java.util.Arrays.fill(chars, '\u0000')
+                                if (ok) {
+                                    completeUnlock(topPkg, newUid)
+                                } else {
+                                    Toast.makeText(this@ProtectionService, getString(R.string.passcode_wrong_error), Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onBiometric = {
+                                BiometricUnlockActivity.launch(this@ProtectionService) { success ->
+                                    if (success) {
+                                        completeUnlock(topPkg, newUid)
+                                    } else {
+                                        // Explicitly keep package locked when biometric is cancelled/failed.
+                                        Prefs.setAuthPendingPackage(this@ProtectionService, topPkg)
+                                    }
+                                }
+                            }
+                        )
+                    }
+
+                    if (requested) {
+                        lastLockedPkg = topPkg
+                        Log.i(TAG, "overlay_requested pkg=$topPkg label=$label")
+                    }
                 }
             } else {
-                if (isRealApp && activeSessionPkg == null) clearUnlockedSession()
+                if (isRealApp && activeSessionPkg == null) {
+                    clearUnlockedSession()
+                }
 
-                // FIX: Switch to Main thread to hide UI
+                maybeUpdatePrivacyShield(topPkg, isRealApp, AuthState.UNLOCKED)
+
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
                     overlayLocker.dismiss("not_locked")
                 }
@@ -239,6 +251,26 @@ class ProtectionService : Service() {
 
             delay(delayMs)
         }
+    }
+
+    private fun maybeUpdatePrivacyShield(topPkg: String, isRealApp: Boolean, authState: AuthState) {
+        val pendingPkg = Prefs.getAuthPendingPackage(this)
+        val hasPendingAuth = pendingPkg != null && authState != AuthState.UNLOCKED
+        val isOverviewSurface = isOverviewOrLauncher(topPkg, isRealApp)
+
+        if (hasPendingAuth && isOverviewSurface) {
+            overlayLocker.showPrivacyShield()
+        } else {
+            overlayLocker.dismissPrivacyShield("not_needed")
+        }
+    }
+
+    private fun isOverviewOrLauncher(pkg: String, isRealApp: Boolean): Boolean {
+        if (pkg == "com.android.systemui") return true
+        if (!isRealApp) return true
+        val launchIntent = packageManager.getLaunchIntentForPackage(pkg) ?: return false
+        val categories = launchIntent.categories.orEmpty()
+        return categories.contains(Intent.CATEGORY_HOME)
     }
 
     private fun resolveTopPackage(): String? {
@@ -265,18 +297,20 @@ class ProtectionService : Service() {
 
     private fun completeUnlock(pkg: String, uid: Int?) {
         Prefs.setSessionUnlocked(this, pkg, uid)
+        Prefs.setAuthPendingPackage(this, null)
         SessionTimeoutScheduler.ensureInitialized(applicationContext)
         SessionTimeoutScheduler.cancel()
         Prefs.clearLastBackground(this)
         Prefs.setLastUnlockNow(this)
         lastLockedPkg = null
         overlayLocker.dismiss("unlocked")
+        overlayLocker.dismissPrivacyShield("unlocked")
 
         packageManager.getLaunchIntentForPackage(pkg)?.let { launch ->
             launch.addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
             )
             startActivity(launch)
         }
@@ -284,6 +318,7 @@ class ProtectionService : Service() {
 
     private fun clearUnlockedSession() {
         Prefs.setSessionUnlocked(this, null, null)
+        Prefs.setAuthPendingPackage(this, null)
         Prefs.clearLastBackground(this)
         SessionTimeoutScheduler.ensureInitialized(applicationContext)
         SessionTimeoutScheduler.cancel()

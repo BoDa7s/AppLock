@@ -28,6 +28,7 @@ object Prefs {
     private const val KEY_LOCK_ON_SCREEN_OFF = "lock_on_screen_off"
     private const val KEY_PROTECTION_ENABLED = "protection_enabled"
     private const val KEY_HAPTICS_ENABLED    = "haptics_enabled"
+    private const val KEY_AUTH_PENDING_PKG   = "auth_pending_pkg"
 
     private const val KEY_PERMISSION_ESCORT_TYPE = "permission_escort_type"
     private const val KEY_PERMISSION_ESCORT_STARTED_AT = "permission_escort_started_at"
@@ -211,6 +212,20 @@ object Prefs {
                 p.getInt(KEY_SESSION_UID, -1).takeIf { it != -1 }
             } else null
         }
+
+    // -------- Pending authentication target --------
+    fun setAuthPendingPackage(ctx: Context, pkg: String?) {
+        sp(ctx).edit {
+            if (pkg.isNullOrBlank()) {
+                remove(KEY_AUTH_PENDING_PKG)
+            } else {
+                putString(KEY_AUTH_PENDING_PKG, pkg)
+            }
+        }
+    }
+
+    fun getAuthPendingPackage(ctx: Context): String? =
+        sp(ctx).getString(KEY_AUTH_PENDING_PKG, null)
 
     // -------- Session timer --------
     const val LOCK_TIMER_IMMEDIATE: Long = 0L
